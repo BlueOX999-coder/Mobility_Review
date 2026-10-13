@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mobility — NCLEX Study Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#EFF3F2; --card:#FFFFFF; --ink:#132320; --ink-soft:#4A5C58;
+  --rule:#D3DCD9; --rule-soft:#E4EAE8;
+  --right:#146B54; --right-bg:#E3F1EC;
+  --wrong:#9A3227; --wrong-bg:#F8E6E3;
+  --note:#54399B; --note-bg:#EDE8F8;
+  --flagc:#8A6100; --flag-bg:#FBF0D8;
+  --chip:#E6ECEA; --chip-on:#132320; --chip-on-ink:#FFFFFF;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --page:#0F1615; --card:#18211F; --ink:#E7EDEB; --ink-soft:#9DAEAA;
+  --rule:#2C3A37; --rule-soft:#232E2C;
+  --right:#58C6A5; --right-bg:#123029;
+  --wrong:#E48B80; --wrong-bg:#33201D;
+  --note:#B9A3F0; --note-bg:#241C3B;
+  --flagc:#E0B64A; --flag-bg:#2E2512;
+  --chip:#232E2C; --chip-on:#E7EDEB; --chip-on-ink:#0F1615;
+}}
+:root[data-theme="dark"]{
+  --page:#0F1615; --card:#18211F; --ink:#E7EDEB; --ink-soft:#9DAEAA;
+  --rule:#2C3A37; --rule-soft:#232E2C;
+  --right:#58C6A5; --right-bg:#123029;
+  --wrong:#E48B80; --wrong-bg:#33201D;
+  --note:#B9A3F0; --note-bg:#241C3B;
+  --flagc:#E0B64A; --flag-bg:#2E2512;
+  --chip:#232E2C; --chip-on:#E7EDEB; --chip-on-ink:#0F1615;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.55}
+.wrap{max-width:52rem;margin:0 auto;padding:0 1.15rem 6rem}
+h1,h2,h3{font-family:"Newsreader",Georgia,serif;font-weight:500;letter-spacing:-.01em}
+button{font:inherit;cursor:pointer}
+.hidden{display:none !important}
+
+/* masthead + mode tabs */
+header.top{padding:2.6rem 0 1.1rem}
+header.top h1{font-size:clamp(1.65rem,4.6vw,2.5rem);line-height:1.1;margin:0 0 .4rem;max-width:32ch}
+header.top p{margin:0;color:var(--ink-soft);font-size:.92rem;max-width:60ch}
+.modes{display:flex;gap:.3rem;border-bottom:1px solid var(--rule);margin-top:1.3rem}
+.mode{background:none;border:none;padding:.55rem .9rem;color:var(--ink-soft);font-size:.93rem;
+  font-weight:500;border-bottom:2px solid transparent;margin-bottom:-1px}
+.mode[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--right)}
+
+/* shared bits */
+.chips{display:flex;gap:.35rem;flex-wrap:wrap}
+.chip{background:var(--chip);color:var(--ink);border:none;border-radius:2rem;
+  padding:.3rem .72rem;font-size:.8rem;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink)}
+.btn{background:var(--ink);color:var(--card);border:none;border-radius:.4rem;
+  padding:.5rem 1.05rem;font-size:.9rem;font-weight:500}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--rule)}
+.btn.small{padding:.3rem .7rem;font-size:.82rem}
+select,input[type=number]{font:inherit;font-size:.88rem;color:var(--ink);background:var(--card);
+  border:1px solid var(--rule);border-radius:.35rem;padding:.32rem .45rem}
+.toolbar{position:sticky;top:0;z-index:20;background:var(--page);border-bottom:1px solid var(--rule);
+  padding:.7rem 0;display:flex;flex-wrap:wrap;gap:.5rem .6rem;align-items:center}
+.toolbar label{font-size:.8rem;color:var(--ink-soft)}
+select.jump{max-width:min(21rem,100%)}
+.tally{margin-left:auto;font-size:.82rem;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.tally b{color:var(--ink);font-weight:600}
+
+/* question card */
+section.slide{padding-top:2.4rem}
+section.slide>h2{font-size:1.3rem;margin:0 0 .1rem}
+section.slide>.meta{font-size:.78rem;color:var(--ink-soft);margin:0 0 1rem}
+article.q{background:var(--card);border:1px solid var(--rule-soft);border-radius:.55rem;
+  padding:1.1rem 1.15rem 1.15rem;margin-bottom:.85rem}
+.qhead{display:flex;gap:.55rem;align-items:baseline;margin-bottom:.5rem;flex-wrap:wrap}
+.qnum{font-size:.78rem;font-weight:600;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.qtype{font-size:.7rem;font-weight:600;color:var(--ink-soft);border:1px solid var(--rule);
+  border-radius:.3rem;padding:.06rem .38rem}
+.qslide{font-size:.7rem;color:var(--ink-soft)}
+.stem{font-family:"Newsreader",Georgia,serif;font-size:1.09rem;line-height:1.45;margin:0 0 .8rem;max-width:64ch}
+ul.opts{list-style:none;margin:0 0 .8rem;padding:0;display:flex;flex-direction:column;gap:.3rem}
+.opt{display:flex;gap:.6rem;align-items:flex-start;width:100%;text-align:left;background:transparent;
+  border:1px solid var(--rule-soft);border-radius:.4rem;padding:.5rem .65rem;color:var(--ink);
+  font-size:.94rem;line-height:1.45}
+.opt:hover:not(:disabled){border-color:var(--rule)}
+.opt:focus-visible{outline:2px solid var(--right);outline-offset:1px}
+.opt .box{flex:none;width:1.15rem;height:1.15rem;margin-top:.12rem;border:1px solid var(--rule);
+  border-radius:.25rem;display:grid;place-items:center;font-size:.72rem;font-weight:600;color:var(--ink-soft)}
+.opt.round .box{border-radius:50%}
+.opt[aria-pressed="true"]{border-color:var(--ink);background:var(--chip)}
+.opt[aria-pressed="true"] .box{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.opt.correct{border-color:var(--right);background:var(--right-bg)}
+.opt.correct .box{background:var(--right);border-color:var(--right);color:var(--card)}
+.opt.missed{border-color:var(--right);border-style:dashed}
+.opt.incorrect{border-color:var(--wrong);background:var(--wrong-bg)}
+.opt.incorrect .box{background:var(--wrong);border-color:var(--wrong);color:var(--card)}
+.opt:disabled{cursor:default;opacity:1}
+.bank{border:1px dashed var(--rule);border-radius:.4rem;padding:.6rem .75rem;margin:0 0 .8rem;font-size:.9rem}
+.bank ol{margin:.25rem 0 0;padding-left:1.35rem}
+.bank .lbl{font-size:.78rem;color:var(--ink-soft)}
+.pairs{display:flex;flex-direction:column;gap:.45rem;margin:0 0 .8rem}
+.pair{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.pair .prompt{flex:1 1 12rem;font-size:.94rem}
+.pair .verdict{font-size:.82rem;font-weight:600}
+.pair.ok .verdict{color:var(--right)}
+.pair.no .verdict{color:var(--wrong)}
+.rat{margin-top:.8rem;border-top:1px solid var(--rule-soft);padding-top:.7rem;font-size:.92rem;
+  color:var(--ink-soft);max-width:66ch}
+.rat .ans{color:var(--ink);font-weight:600;display:block;margin-bottom:.2rem}
+.note{margin-top:.7rem;border-left:3px solid var(--note);background:var(--note-bg);
+  padding:.55rem .75rem;border-radius:0 .35rem .35rem 0;font-size:.88rem;max-width:66ch}
+.note .t{color:var(--note);font-weight:600}
+
+/* exam setup */
+.panel{background:var(--card);border:1px solid var(--rule-soft);border-radius:.55rem;
+  padding:1.15rem 1.2rem;margin:1.6rem 0}
+.panel h2{font-size:1.25rem;margin:0 0 .3rem}
+.panel .sub{color:var(--ink-soft);font-size:.9rem;margin:0 0 1.1rem;max-width:60ch}
+.field{margin-bottom:1.6rem}
+.field>.h,.panel>.h{font-size:1rem;font-weight:600;margin-bottom:.15rem}
+.panel>.h{margin:1.3rem 0 .2rem;font-size:.88rem}
+main>h2{font-size:1.4rem;margin:2.4rem 0 .15rem}
+.field>.d{font-size:.84rem;color:var(--ink-soft);margin-bottom:.6rem;max-width:58ch}
+.choices{display:flex;flex-direction:column;gap:.45rem}
+.choice{display:flex;gap:.7rem;align-items:flex-start;width:100%;text-align:left;
+  background:transparent;border:1px solid var(--rule);border-radius:.45rem;
+  padding:.7rem .85rem;color:var(--ink);font-size:.95rem}
+.choice:hover:not(:disabled){border-color:var(--ink-soft)}
+.choice:focus-visible{outline:2px solid var(--right);outline-offset:1px}
+.choice[aria-pressed="true"]{border-color:var(--right);background:var(--right-bg)}
+.choice .dot{flex:none;width:1.1rem;height:1.1rem;margin-top:.2rem;border-radius:50%;
+  border:1px solid var(--rule);display:grid;place-items:center}
+.choice[aria-pressed="true"] .dot{border-color:var(--right)}
+.choice[aria-pressed="true"] .dot::after{content:"";width:.55rem;height:.55rem;
+  border-radius:50%;background:var(--right)}
+.choice .t{font-weight:500}
+.choice .s{display:block;font-size:.83rem;color:var(--ink-soft);font-weight:400;margin-top:.1rem}
+.choice:disabled{opacity:.5;cursor:not-allowed}
+.picker{margin:.5rem 0 .1rem 1.8rem}
+.picker select{max-width:min(26rem,100%);width:100%}
+.sizes{display:flex;gap:.4rem;flex-wrap:wrap}
+.size{flex:1 1 4.5rem;min-width:4rem;background:transparent;border:1px solid var(--rule);
+  border-radius:.45rem;padding:.65rem .4rem;text-align:center;font-weight:500;color:var(--ink);font-size:.95rem}
+.size:hover:not([aria-pressed="true"]){border-color:var(--ink-soft)}
+.size[aria-pressed="true"]{border-color:var(--right);background:var(--right-bg);color:var(--right)}
+label.cb{display:flex;gap:.5rem;align-items:flex-start;font-size:.9rem;margin:.35rem 0}
+input[type=checkbox]{margin:.28rem 0 0;accent-color:var(--right);width:1rem;height:1rem;flex:none}
+details.more{margin-top:.4rem;border-top:1px solid var(--rule-soft);padding-top:.9rem}
+details.more summary{font-size:.86rem;color:var(--ink-soft);cursor:pointer;width:fit-content}
+details.more[open] summary{margin-bottom:.7rem}
+.startbar{border-top:1px solid var(--rule);margin-top:1.3rem;padding-top:1.1rem}
+.startbar .btn{padding:.6rem 1.5rem;font-size:.95rem}
+.poolinfo{font-size:.85rem;color:var(--ink-soft);margin-top:.6rem;max-width:56ch}
+.poolinfo b{color:var(--ink)}
+.warn{color:var(--flagc);font-size:.84rem;background:var(--flag-bg);border-radius:.35rem;
+  padding:.45rem .65rem;margin-top:.6rem;max-width:56ch}
+.poolbar{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin-top:1.2rem}
+
+/* exam runner */
+.examtop{position:sticky;top:0;z-index:20;background:var(--page);border-bottom:1px solid var(--rule);
+  padding:.65rem 0;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.prog{flex:1 1 8rem;height:.32rem;background:var(--rule-soft);border-radius:2rem;overflow:hidden;min-width:6rem}
+.prog i{display:block;height:100%;background:var(--right);width:0}
+.examtop .pos{font-size:.84rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+.timer{font-size:.84rem;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.navgrid{display:flex;flex-wrap:wrap;gap:.25rem;margin:1.2rem 0}
+.navbtn{width:2rem;height:2rem;border:1px solid var(--rule);background:var(--card);border-radius:.3rem;
+  font-size:.76rem;color:var(--ink-soft);font-variant-numeric:tabular-nums;padding:0}
+.navbtn.done{background:var(--chip);color:var(--ink);border-color:var(--rule)}
+.navbtn.flag{border-color:var(--flagc);color:var(--flagc)}
+.navbtn.here{outline:2px solid var(--right);outline-offset:1px}
+.navbtn.ok{background:var(--right-bg);border-color:var(--right);color:var(--right)}
+.navbtn.bad{background:var(--wrong-bg);border-color:var(--wrong);color:var(--wrong)}
+.runnav{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:1rem}
+.runnav .sp{margin-left:auto}
+
+/* results */
+.scorebig{font-family:"Newsreader",Georgia,serif;font-size:3.4rem;line-height:1;margin:.2rem 0 .1rem}
+.scoresub{color:var(--ink-soft);font-size:.95rem;margin-bottom:1.2rem}
+table.bd{width:100%;border-collapse:collapse;font-size:.88rem;margin:.4rem 0 0}
+table.bd th,table.bd td{text-align:left;padding:.35rem .5rem;border-bottom:1px solid var(--rule-soft)}
+table.bd th{font-size:.78rem;color:var(--ink-soft);font-weight:600}
+table.bd td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scroll{overflow-x:auto}
+footer.end{margin-top:3rem;padding-top:1.2rem;border-top:1px solid var(--rule);
+  font-size:.84rem;color:var(--ink-soft);max-width:62ch}
+footer.end button{background:none;border:none;color:var(--ink-soft);text-decoration:underline;
+  padding:0;font-size:inherit}
+@media (prefers-reduced-motion: no-preference){
+  .rat,.note{animation:rise .2s ease-out}
+  @keyframes rise{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+  .prog i{transition:width .25s ease}
+}
+@media (max-width:30rem){
+  .tally{margin-left:0;width:100%}
+  .stem{font-size:1.04rem}
+  .scorebig{font-size:2.8rem}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>Mobility</h1>
+  <p><b id="total"></b> questions built from the Mobility lecture, as multiple choice, select all that apply and matching. Study by section, or build yourself a custom exam.</p>
+  <div class="modes" role="tablist">
+    <button class="mode" role="tab" data-mode="study" aria-selected="true">Study by section</button>
+    <button class="mode" role="tab" data-mode="exam" aria-selected="false">Take a practice exam</button>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer class="end">
+  Built from the <em>Mobility</em> lecture slides and speaker notes.
+  Your exam history is saved in this browser only &mdash; nothing is uploaded, and each person using this
+  link has their own separate history. <button id="wipe">Clear my history</button>
+</footer>
+
+</div>
+<script>
+const QUESTIONS = [{"s": 1, "t": "mc", "q": "What is the main component of mobility?", "o": ["The cardiovascular system", "The musculoskeletal system", "The peripheral nervous system", "The integumentary system"], "a": [1], "r": "The main component of mobility is the musculoskeletal system. Its parts are the muscles, skeleton, joints, tendons, ligaments and cartilage.", "id": "s1-1"}, {"s": 1, "t": "sata", "q": "Which structures make up the musculoskeletal system? Select all that apply.", "o": ["Muscles", "Skeleton", "Joints", "Tendons", "Ligaments and cartilage", "Peripheral nerves"], "a": [0, 1, 2, 3, 4], "r": "The musculoskeletal system is made up of the muscles, skeleton, joints, tendons, ligaments and cartilage.", "id": "s1-2"}, {"s": 1, "t": "match", "q": "Match each musculoskeletal structure to what it is or does (set 1 of 2).", "p": [["Muscles", "Come in three types, with skeletal muscle attached to bone by tendons"], ["Skeleton", "Forms body structure, protects organs, stores minerals, forms blood cells"], ["Joints", "Formed where two bones meet, holding the skeleton together"]], "r": "Muscles contract to move the bones, the skeleton is the framework with several jobs beyond support, and joints are the meeting points that allow the framework to move.", "id": "s1-3"}, {"s": 1, "t": "match", "q": "Match each musculoskeletal structure to what it is or does (set 2 of 2).", "p": [["Tendons", "Connect bone to muscle and carry the contractile force to the bone"], ["Ligaments", "Connect bone to bone to form joints"], ["Cartilage", "Flexible connective tissue found throughout the body"]], "r": "An easy way to keep these straight: tendons tie muscle to bone, ligaments link bone to bone, and cartilage is the flexible tissue in between and elsewhere, such as connecting the ribs to the sternum.", "id": "s1-4"}, {"s": 1, "t": "sata", "q": "What are the three types of muscle? Select all that apply.", "o": ["Skeletal muscle", "Smooth muscle", "Cardiac muscle", "Tendinous muscle", "Cartilaginous muscle"], "a": [0, 1, 2], "r": "The three types of muscle are skeletal muscle, smooth muscle and cardiac muscle. Skeletal muscle is the one attached to bone via tendons.", "id": "s1-5"}, {"s": 1, "t": "mc", "q": "How does skeletal muscle produce movement?", "o": ["It pulls directly on the ligaments that join the bones", "It is attached to bone by tendons, and its contraction moves the bone", "It surrounds the joint capsule and rotates it from outside", "It shortens the cartilage between two adjacent bones"], "a": [1], "r": "Skeletal muscle is attached to bone via tendons. Muscle contraction causes movement of the bones.", "id": "s1-6"}, {"s": 1, "t": "sata", "q": "What does the skeleton do? Select all that apply.", "o": ["Forms body structure", "Supports soft tissue", "Protects vital organs", "Stores minerals such as calcium and phosphorus", "Forms blood cells", "Produces the neurotransmitters for movement"], "a": [0, 1, 2, 3, 4], "r": "The skeleton forms body structure, supports soft tissue, protects vital organs, stores minerals such as calcium and phosphorus, and forms blood cells.", "id": "s1-7"}, {"s": 1, "t": "mc", "q": "Which minerals does the skeleton store?", "o": ["Sodium and potassium", "Calcium and phosphorus", "Iron and magnesium", "Chloride and bicarbonate"], "a": [1], "r": "The skeleton stores minerals, specifically calcium and phosphorus.", "id": "s1-8"}, {"s": 2, "t": "sata", "q": "Which causes of back problems were listed? Select all that apply.", "o": ["Pregnancy", "Disk degeneration", "Poor posture", "Improper lifting", "Being overweight", "Low dietary calcium"], "a": [0, 1, 2, 3, 4], "r": "Back problems arise from a variety of causes including pregnancy, disk degeneration, poor posture, improper lifting and being overweight.", "id": "s2-1"}, {"s": 2, "t": "mc", "q": "How do back problems affect mobility?", "o": ["They cause permanent loss of sensation in the legs", "They cause limited mobility due to pain or stiffness", "They prevent the bones from storing calcium normally", "They destroy the cartilage within the hip and knee joints"], "a": [1], "r": "Back problems can cause limited mobility due to pain or stiffness.", "id": "s2-2"}, {"s": 2, "t": "mc", "q": "How do fractures impair mobility?", "o": ["Through pain and the loss of stability to that area", "Through the slow destruction of the joint cartilage", "By interrupting the nerve signal from the brain to the limb", "By reducing the amount of synovial fluid in the joint"], "a": [0], "r": "Fractures greatly impair mobility due to pain and the loss of stability to that area.", "id": "s2-3"}, {"s": 3, "t": "mc", "q": "What kind of disorder is multiple sclerosis?", "o": ["A degenerative joint disorder of aging", "An autoimmune disorder", "A motor system disorder caused by low dopamine", "A metabolic disorder of uric acid"], "a": [1], "r": "Multiple sclerosis is an autoimmune disorder in which the immune system attacks the myelin sheath.", "id": "s3-1"}, {"s": 3, "t": "mc", "q": "What does the immune system attack in multiple sclerosis?", "o": ["The cartilage lining the weight-bearing joints", "The myelin sheath around the nerves", "The dopamine-producing cells of the brain", "The synovial lining of the joint capsule"], "a": [1], "r": "In multiple sclerosis the immune system attacks the myelin sheath, the insulating layer around nerves that allows electrical impulses to transmit quickly.", "id": "s3-2"}, {"s": 3, "t": "mc", "q": "What is the myelin sheath?", "o": ["The outer covering of a long bone that carries its blood supply", "The insulating layer around nerves that lets impulses transmit quickly", "The fibrous band that joins one bone to another at a joint", "The smooth tissue that cushions the ends of bones in a joint"], "a": [1], "r": "The myelin sheath is the insulating layer around nerves that allows electrical impulses to transmit quickly.", "id": "s3-3"}, {"s": 3, "t": "mc", "q": "How does multiple sclerosis affect mobility?", "o": ["It causes joint stiffness, swelling, pain and tenderness with movement", "It impairs the brain's ability to communicate with the body, so muscle control is lost", "It causes a break in the continuity of the weight-bearing bones of the leg", "It reduces perfusion to the extremities, which leads to death of the tissue"], "a": [1], "r": "By damaging the myelin sheath, multiple sclerosis impairs the brain's ability to communicate with the body, resulting in poor muscle control or loss of muscle control.", "id": "s3-4"}, {"s": 4, "t": "mc", "q": "What kind of disorder is Parkinson disease?", "o": ["An autoimmune disorder of the peripheral nerves", "A motor system disorder", "A degenerative disorder of the joint cartilage", "An inflammatory disorder of the synovial joints"], "a": [1], "r": "Parkinson disease is a motor system disorder caused by a lack of dopamine in the brain and an imbalance of acetylcholine.", "id": "s4-1"}, {"s": 4, "t": "mc", "q": "What causes Parkinson disease?", "o": ["An immune attack on the insulating layer around the nerves", "A lack of dopamine in the brain and an imbalance of acetylcholine", "A build-up of uric acid that crystallizes within the joints", "Degeneration of the cartilage and bone within the joints"], "a": [1], "r": "Parkinson disease is caused by a lack of dopamine, a neurotransmitter, in the brain, and an imbalance of acetylcholine, another neurotransmitter.", "id": "s4-2"}, {"s": 4, "t": "sata", "q": "Which are manifestations of Parkinson disease? Select all that apply.", "o": ["Tremors in the hands, arms, legs, jaw and face", "Rigidity and stiffness of the limbs and trunk", "Bradykinesia", "Slurred speech", "Imbalance and poor coordination", "Crystallized deposits within the great toe"], "a": [0, 1, 2, 3, 4], "r": "The manifestations of Parkinson disease are tremors in the hands, arms, legs, jaw and face, rigidity and stiffness of the limbs and trunk, bradykinesia, slurred speech, and imbalance or poor coordination.", "id": "s4-3"}, {"s": 4, "t": "mc", "q": "What is bradykinesia?", "o": ["Rigidity of the limbs and trunk", "Slowness of movement", "Tremor that occurs at rest", "Loss of coordination while walking"], "a": [1], "r": "Bradykinesia is slowness of movement. It is one of the manifestations of Parkinson disease.", "id": "s4-4"}, {"s": 5, "t": "mc", "q": "What is osteoarthritis?", "o": ["An autoimmune disease that inflames the lining of the joints", "Degeneration of cartilage and bone in a joint, as a normal process of aging", "A build-up of uric acid that crystallizes within a joint", "An immune attack on the insulating layer around the nerves"], "a": [1], "r": "Osteoarthritis is degeneration of cartilage and bone in a joint. It is described as a normal process of aging.", "id": "s5-1"}, {"s": 5, "t": "sata", "q": "What does osteoarthritis cause? Select all that apply.", "o": ["Joint stiffness", "Swelling", "Pain", "Tenderness", "Loss of the myelin sheath", "Slurred speech"], "a": [0, 1, 2, 3], "r": "Osteoarthritis causes joint stiffness, swelling, pain and tenderness.", "id": "s5-2"}, {"s": 5, "t": "mc", "q": "What are joint disorders described as?", "o": ["A rare complication of prolonged bedrest", "The primary cause of decreased mobility", "A normal and expected part of aging", "A consequence of inadequate dietary protein"], "a": [1], "r": "Joint disorders are the primary cause of decreased mobility. Examples given are rheumatoid arthritis and gout.", "id": "s5-3"}, {"s": 5, "t": "mc", "q": "What is rheumatoid arthritis?", "o": ["Degeneration of the cartilage from normal aging", "An autoimmune disease that causes inflammation of the joints", "A build-up of uric acid crystals within the joints", "A motor system disorder caused by low dopamine"], "a": [1], "r": "Rheumatoid arthritis is an autoimmune disease that causes inflammation of the joints. It is one of the joint disorder examples given, along with gout.", "id": "s5-4"}, {"s": 6, "t": "mc", "q": "How are spinal cord injuries described?", "o": ["Chronic conditions that develop slowly over several years", "Medical emergencies that may result in permanent disability", "Degenerative changes that occur with normal aging", "Autoimmune conditions that attack the nerve coverings"], "a": [1], "r": "Spinal cord injuries are medical emergencies that may result in permanent disability.", "id": "s6-1"}, {"s": 6, "t": "sata", "q": "What commonly causes spinal cord injuries? Select all that apply.", "o": ["Motor vehicle accidents", "Falls", "Assaults", "Gunshot wounds", "Sports", "Autoimmune attack on the spinal nerves"], "a": [0, 1, 2, 3, 4], "r": "Spinal cord injuries often result from motor vehicle accidents, falls, assaults, gunshot wounds and sports.", "id": "s6-2"}, {"s": 6, "t": "mc", "q": "What determines the type and severity of symptoms in a spinal cord injury?", "o": ["The age of the client at the time of injury", "The location of the injury", "Whether the injury was traumatic or atraumatic", "The length of time before surgery is performed"], "a": [1], "r": "The location of the injury determines the type and severity of symptoms.", "id": "s6-3"}, {"s": 6, "t": "mc", "q": "A client has a cervical spinal cord injury. Which areas may be affected?", "o": ["The legs, bowel and bladder only", "The arms, legs and trunk", "The arms only", "The bowel and bladder only"], "a": [1], "r": "Cervical injuries may affect the arms, legs and trunk. Thoracic and lumbar injuries may affect the legs, bowels and bladder.", "id": "s6-4"}, {"s": 7, "t": "sata", "q": "What do traumatic injuries cause? Select all that apply.", "o": ["Pain", "Swelling", "Bruising", "Muscle spasms", "Demineralization of the bone", "Loss of the myelin sheath"], "a": [0, 1, 2, 3], "r": "Traumatic injuries cause pain, swelling, bruising and muscle spasms.", "id": "s7-1"}, {"s": 7, "t": "match", "q": "Match each traumatic injury to what happens in the body.", "p": [["Bruise", "Traumatic force ruptures the blood vessels"], ["Sprain", "Stretching or tearing of a ligament"], ["Strain", "Stretching or tearing of a muscle or tendon"]], "r": "The distinction comes down to what tissue is damaged. A bruise is ruptured blood vessels, a sprain is the ligament, and a strain is the muscle or tendon. Remember that ligaments connect bone to bone, so a sprain is a joint injury.", "id": "s7-2"}, {"s": 7, "t": "mc", "q": "What happens in the body during a sprain?", "o": ["Stretching or tearing of a muscle or tendon", "Stretching or tearing of a ligament", "Rupture of the blood vessels beneath the skin", "Degeneration of the cartilage within the joint"], "a": [1], "r": "A sprain is a stretching or tearing of a ligament. Since ligaments connect bone to bone to form joints, a sprain is a joint injury.", "id": "s7-3"}, {"s": 7, "t": "mc", "q": "What happens in the body during a strain?", "o": ["Stretching or tearing of a ligament", "Stretching or tearing of a muscle or tendon", "Rupture of the blood vessels beneath the skin", "A break in the continuity of the bone"], "a": [1], "r": "A strain is a stretching or tearing of a muscle or tendon.", "id": "s7-4"}, {"s": 7, "t": "mc", "q": "A client rolls an ankle and tears a ligament. Which injury is this?", "o": ["A strain", "A sprain", "A bruise", "A fracture"], "a": [1], "r": "Tearing a ligament is a sprain. A strain would be the muscle or tendon, and a bruise would be ruptured blood vessels.", "id": "s7-5"}, {"s": 8, "t": "mc", "q": "What is an amputation?", "o": ["The surgical fusion of two bones at a damaged joint", "Partial or total removal of an extremity or body part", "The permanent loss of sensation in a limb", "The shortening of a tendon causing a fixed joint"], "a": [1], "r": "An amputation is the partial or total removal of an extremity or body part, as a result of injury or a chronic condition.", "id": "s8-1"}, {"s": 8, "t": "sata", "q": "Which chronic conditions can lead to amputation? Select all that apply.", "o": ["Diabetes mellitus", "Peripheral vascular disease", "Multiple sclerosis", "Gout", "Osteoarthritis"], "a": [0, 1], "r": "Chronic conditions such as diabetes mellitus and peripheral vascular disease can lead to amputation.", "id": "s8-2"}, {"s": 8, "t": "mc", "q": "How do diabetes mellitus and peripheral vascular disease lead to amputation?", "o": ["They weaken the bone until it fractures under normal weight", "They decrease perfusion to the extremities, leading to tissue death", "They cause the immune system to attack the limb's nerves", "They cause uric acid to crystallize within the joints of the foot"], "a": [1], "r": "Chronic conditions such as diabetes mellitus and PVD can decrease perfusion to the extremities, leading to tissue death and required amputation.", "id": "s8-3"}, {"s": 9, "t": "mc", "q": "Which statement describes the reach of impaired mobility?", "o": ["It affects only the musculoskeletal system", "It can affect virtually every system in the body", "It affects only the cardiovascular and respiratory systems", "It affects the body only after several weeks of bedrest"], "a": [1], "r": "Impaired mobility can virtually affect every system in the body: cardiovascular, respiratory, metabolic, gastrointestinal, urinary, integumentary, musculoskeletal and psychosocial.", "id": "s9-1"}, {"s": 9, "t": "sata", "q": "Which are cardiovascular effects of impaired mobility? Select all that apply.", "o": ["Orthostatic hypotension", "Deep vein thrombosis", "Peripheral edema", "Atelectasis", "Hypercalcemia"], "a": [0, 1, 2], "r": "The cardiovascular effects of impaired mobility are orthostatic hypotension, increased risk of thrombus formation (DVT), and peripheral edema from venous stasis.", "id": "s9-2"}, {"s": 9, "t": "mc", "q": "What is orthostatic hypotension?", "o": ["A gradual fall in blood pressure over several days of bedrest", "A sudden drop in blood pressure when going from lying to sitting or standing", "A rise in blood pressure when the client first stands up", "A drop in blood pressure that occurs only during sleep"], "a": [1], "r": "Orthostatic hypotension, also called postural hypotension, is a sudden drop in blood pressure when a patient goes from lying to sitting and sitting to standing.", "id": "s9-3"}, {"s": 9, "t": "sata", "q": "What can orthostatic hypotension cause? Select all that apply.", "o": ["Dizziness", "Nausea", "Lightheadedness", "Fainting", "Calf pain on dorsiflexion", "Swelling of the limb"], "a": [0, 1, 2, 3], "r": "Orthostatic hypotension can cause dizziness, nausea, lightheadedness and fainting. The calf pain and limb swelling belong to DVT.", "id": "s9-4"}, {"s": 9, "t": "mc", "q": "Why does orthostatic hypotension occur?", "o": ["The heart muscle weakens and loses its ability to contract", "The body cannot regulate blood flow fast enough to perfuse the brain against gravity", "The blood thickens and is unable to move through the arteries", "The veins are compressed by the bones during position changes"], "a": [1], "r": "It results from the body's inability to regulate blood flow fast enough and pump adequate blood to the brain, causing hypoperfusion of the brain. It must work against the sudden pull of gravity.", "id": "s9-5"}, {"s": 9, "t": "mc", "q": "Why is a client on extended bedrest more likely to develop orthostatic hypotension?", "o": ["The heart rate slows permanently during bedrest", "Muscle tone of the arterial system is lost from disuse", "The blood volume increases while lying flat", "The veins lose their valves after prolonged pressure"], "a": [1], "r": "For those who are immobile and in bed for an extended period, muscle tone of the arterial system is lost due to disuse, decreasing the ability of blood to be pumped to the brain when working against gravity.", "id": "s9-6"}, {"s": 9, "t": "mc", "q": "How does normal muscle movement help prevent a DVT?", "o": ["It raises the blood pressure enough to clear the veins", "Muscle flexion assists the venous return of blood to the heart", "It increases the number of clotting factors in circulation", "It widens the veins so clots cannot lodge in them"], "a": [1], "r": "Muscle movement assists the venous return of blood to the heart. When muscles are flexed it facilitates the movement of blood.", "id": "s9-7"}, {"s": 9, "t": "mc", "q": "What happens to blood when a client is immobile?", "o": ["It thins and moves more quickly through the veins", "It pools and stasis occurs, increasing viscosity and the tendency to clot", "It is shunted from the legs into the central circulation", "It clots only if the client is also dehydrated"], "a": [1], "r": "When the patient is immobile the blood pools and stasis occurs. When blood is stagnant it increases its viscosity, meaning it thickens, and increased viscosity increases the blood's tendency to clot.", "id": "s9-8"}, {"s": 9, "t": "mc", "q": "Besides pooling, what else slows circulation when a client lies down?", "o": ["The arteries constrict to conserve heat", "The veins are compressed by the bones", "The heart rate drops below 50", "The blood is diverted to the digestive tract"], "a": [1], "r": "The veins are also compressed by the bones when lying down, further slowing circulation.", "id": "s9-9"}, {"s": 9, "t": "sata", "q": "Where can a clot that breaks off from a DVT travel, and what results? Select all that apply.", "o": ["The brain, causing a stroke", "The lungs, causing a pulmonary embolism", "The heart, causing a myocardial infarction", "The kidneys, causing hypercalcemia", "The skin, causing a pressure injury"], "a": [0, 1, 2], "r": "The clots can break off and end up in the brain causing a stroke, the lungs causing a pulmonary embolism, or the heart causing a myocardial infarction.", "id": "s9-10"}, {"s": 9, "t": "mc", "q": "What is Homan's sign?", "o": ["Swelling of the limb measured at the mid-calf", "Pain in the calf from dorsiflexion", "Redness and warmth over the affected vein", "A drop in blood pressure when standing"], "a": [1], "r": "Homan's sign is pain in the calf from dorsiflexion. It is not relied on to diagnose a DVT.", "id": "s9-11"}, {"s": 9, "t": "mc", "q": "How does peripheral edema develop in an immobile client?", "o": ["Protein leaks out through the kidneys, so fluid is drawn into the tissue", "Pooled blood raises venous pressure, forcing plasma out into the surrounding space", "The lymph nodes become blocked by stagnant blood returning from the legs", "The arteries dilate under pressure and leak fluid into the surrounding tissue"], "a": [1], "r": "Due to the lack of return of blood to the heart by the veins, it pools, increasing venous pressure. The increased pressure on the vessel causes plasma, the liquid component of blood, to leak out of the vein and into the surrounding space.", "id": "s9-12"}, {"s": 10, "t": "sata", "q": "Which are respiratory effects of impaired mobility? Select all that apply.", "o": ["Atelectasis", "Stasis of secretions", "Orthostatic hypotension", "Hypercalcemia", "Constipation"], "a": [0, 1], "r": "The respiratory effects of impaired mobility are atelectasis and stasis of secretions.", "id": "s10-1"}, {"s": 10, "t": "mc", "q": "What is atelectasis?", "o": ["Collapse of the alveoli, the tiny air sacs responsible for gas exchange", "Thickening of the mucus that lines the lower airway", "Inflammation of the pleural lining of the lung", "Weakening of the muscles used for respiration"], "a": [0], "r": "Atelectasis is the collapse of the alveoli, the tiny air sacs in the lungs responsible for gas exchange.", "id": "s10-2"}, {"s": 10, "t": "mc", "q": "Why does atelectasis develop in a client lying flat?", "o": ["The diaphragm is pushed upward by the abdominal organs", "The ability to fully expand the lungs is impaired, so the alveoli collapse", "Secretions pool and plug the larger airways", "The muscles of respiration become permanently weakened"], "a": [1], "r": "When lying flat the ability to fully expand the lungs is impaired. Without expansion the alveoli collapse on themselves, causing decreased ability to exchange CO2 and O2.", "id": "s10-3"}, {"s": 10, "t": "mc", "q": "Why does stasis of secretions occur in an immobile client?", "o": ["The body produces more mucus while the client is lying flat in bed", "They are not breathing deeply, coughing up sputum or exercising their lungs", "The cilia lining the airway are destroyed by prolonged bedrest", "Dehydration thickens the secretions past the point of clearing them"], "a": [1], "r": "Patients who are not moving a lot also are not breathing deeply, coughing up sputum or mucus, or exercising their lungs. This sets the patient up for general respiratory deconditioning and pneumonia.", "id": "s10-4"}, {"s": 10, "t": "mc", "q": "What happens to the muscles of respiration without regular exercise?", "o": ["They become weak", "They become rigid and shortened", "They atrophy within 24 hours", "They are unaffected by immobility"], "a": [0], "r": "Without regular exercise, the muscles of respiration become weak.", "id": "s10-5"}, {"s": 11, "t": "sata", "q": "Which are metabolic effects of impaired mobility? Select all that apply.", "o": ["Hypercalcemia", "Weight gain", "Constipation", "Peripheral edema", "Muscle atrophy"], "a": [0, 1], "r": "The metabolic effects of impaired mobility are impaired calcium metabolism causing hypercalcemia, and weight gain.", "id": "s11-1"}, {"s": 11, "t": "mc", "q": "What causes the bones to metabolize calcium?", "o": ["A diet high in dairy products", "Stress placed on them, meaning mobility", "The action of vitamin D in the bloodstream", "Prolonged periods of rest"], "a": [1], "r": "The bones metabolize, meaning utilize, calcium when stress is placed on them. That stress is mobility, such as walking and exercising.", "id": "s11-2"}, {"s": 11, "t": "mc", "q": "How does immobility lead to hypercalcemia?", "o": ["The kidneys stop excreting calcium while the client is recumbent", "The lack of stress causes the bones to demineralize, leaking calcium into the blood", "The diet must be supplemented with calcium during bedrest", "Muscle breakdown releases stored calcium into the circulation"], "a": [1], "r": "The lack of stress on the bones causes them to demineralize, causing calcium to leak into the bloodstream and causing hypercalcemia.", "id": "s11-3"}, {"s": 11, "t": "sata", "q": "What can hypercalcemia cause? Select all that apply.", "o": ["Effects on the electrical impulses of the heart", "Confusion or coma", "Kidney failure", "Increased peristalsis", "Pressure injuries"], "a": [0, 1, 2], "r": "Hypercalcemia can affect the electrical impulses of the heart, lead to confusion or coma, and cause kidney failure.", "id": "s11-4"}, {"s": 11, "t": "mc", "q": "Why does an immobile client gain weight?", "o": ["Fluid is retained within the tissues", "Lack of movement decreases caloric output", "The metabolic rate rises to repair unused muscle", "Calcium leaking from the bones adds body mass"], "a": [1], "r": "Lack of movement decreases caloric output, causing weight gain.", "id": "s11-5"}, {"s": 12, "t": "mc", "q": "What is the gastrointestinal effect of impaired mobility?", "o": ["Increased peristalsis leading to diarrhea", "Decreased peristalsis leading to constipation", "Increased gastric acid leading to ulcers", "Loss of the gag reflex leading to aspiration"], "a": [1], "r": "Decreased peristalsis is the gastrointestinal effect. The smooth muscle contraction of the digestive tract decreases, causing food and waste to move through slower, which can lead to constipation.", "id": "s12-1"}, {"s": 12, "t": "mc", "q": "What is peristalsis?", "o": ["The wave of pressure that moves blood through the veins", "The smooth muscle contraction of the digestive tract", "The rhythmic expansion and recoil of the lungs", "The reflex emptying of the bladder when it fills"], "a": [1], "r": "Peristalsis is the smooth muscle contraction of the digestive tract. When it decreases, food and waste move through slower.", "id": "s12-2"}, {"s": 12, "t": "mc", "q": "A client on bedrest reports no bowel movement in four days. Which effect of immobility explains this?", "o": ["Hypercalcemia slowing the bowel", "Decreased peristalsis moving waste through more slowly", "Stasis of secretions in the lower GI tract", "Venous stasis reducing perfusion to the bowel"], "a": [1], "r": "The smooth muscle contraction of the digestive tract decreases with immobility, causing food and waste to move through slower, which leads to constipation.", "id": "s12-3"}, {"s": 13, "t": "mc", "q": "An immobilized client is suspected of having atelectasis. On auscultation, the nurse would assess this as:", "o": ["Harsh crackles", "Wheezing on inspiration", "Diminished breath sounds", "Bronchovesicular breath sounds"], "a": [2], "r": "Atelectasis is the partial or total collapse of the lung or alveoli due to the lungs not fully expanding. You hear diminished lung sounds because of the decrease of air moving in and out of the lungs and the inability of the lungs to fully expand.", "id": "s13-1"}, {"s": 13, "t": "mc", "q": "Why does atelectasis produce diminished breath sounds rather than adventitious ones?", "o": ["Fluid in the alveoli muffles the sound of air entry", "Less air is moving in and out because the lungs cannot fully expand", "The bronchi narrow and whistle on expiration", "Inflamed pleural surfaces rub against each other"], "a": [1], "r": "You hear diminished lung sounds because of the decrease of air moving in and out of the lungs and the inability of the lungs to fully expand.", "id": "s13-2"}, {"s": 14, "t": "sata", "q": "Which are urinary effects of impaired mobility? Select all that apply.", "o": ["Urinary tract infection", "Urinary calculi", "Hypercalcemia", "Pressure injuries", "Contractures"], "a": [0, 1], "r": "The urinary effects of impaired mobility are urinary tract infection and the formation of urinary calculi, meaning kidney stones.", "id": "s14-1"}, {"s": 14, "t": "mc", "q": "What does remaining in a recumbent position increase the risk of?", "o": ["Urine reflux into the kidneys and stasis of urine", "Rapid emptying of the bladder with each void", "Increased renal blood supply to the kidneys", "Acidic urine formation within the bladder"], "a": [0], "r": "Remaining in a recumbent position, meaning lying down in any form, increases the risk of urine reflux into the kidneys and stasis of urine in the urinary system.", "id": "s14-2"}, {"s": 14, "t": "mc", "q": "Why does urine pool when a client lies flat?", "o": ["The kidneys produce more urine in the recumbent position", "Urine must move against gravity through the urinary system", "The bladder muscle weakens within the first day of bedrest", "The ureters are compressed by the pelvic bones"], "a": [1], "r": "When lying flat, urine must move against gravity through the urinary system, causing it to pool. Inadequate emptying of the bladder is an example.", "id": "s14-3"}, {"s": 14, "t": "mc", "q": "What does pooled urine create?", "o": ["An acidic environment that irritates the bladder", "A reservoir for bacteria", "A dilution of the urine that masks infection", "An increase in renal blood flow"], "a": [1], "r": "Pooling urine creates a reservoir for bacteria. Backflow and stasis of urine can lead to a urinary tract infection and the formation of urinary calculi.", "id": "s14-4"}, {"s": 14, "t": "mc", "q": "What is another name for urinary calculi?", "o": ["Bladder spasms", "Kidney stones", "Urinary reflux", "Renal casts"], "a": [1], "r": "Urinary calculi are kidney stones. Backflow and stasis of urine can lead to both a UTI and their formation.", "id": "s14-5"}, {"s": 15, "t": "mc", "q": "What is the integumentary effect of impaired mobility?", "o": ["Pressure injuries", "Contractures", "Muscle atrophy", "Peripheral edema"], "a": [0], "r": "The integumentary effect of impaired mobility is pressure injuries. Increased pressure in any area, especially over bony prominences, can cause ischemia to the skin and underlying tissues.", "id": "s15-1"}, {"s": 15, "t": "mc", "q": "Where is the risk of pressure injury greatest?", "o": ["Over the large muscle groups", "Over bony prominences", "At the skin folds", "Over areas with the most subcutaneous fat"], "a": [1], "r": "Increased pressure in any area, but especially over bony prominences, can cause ischemia to the skin and underlying tissues.", "id": "s15-2"}, {"s": 15, "t": "mc", "q": "What does increased pressure cause in the skin and underlying tissues?", "o": ["Inflammation", "Ischemia", "Edema", "Atrophy"], "a": [1], "r": "Increased pressure in any area, especially over bony prominences, can cause ischemia to the skin and underlying tissues.", "id": "s15-3"}, {"s": 16, "t": "sata", "q": "Which are musculoskeletal effects of impaired mobility? Select all that apply.", "o": ["Muscle atrophy", "Contractures", "Pressure injuries", "Urinary calculi", "Peripheral edema"], "a": [0, 1], "r": "The musculoskeletal effects of impaired mobility are muscle atrophy and contractures.", "id": "s16-1"}, {"s": 16, "t": "mc", "q": "What does disuse do to muscle tissue?", "o": ["Causes it to atrophy", "Causes it to shorten into a contracture", "Causes it to stiffen with calcium deposits", "Causes it to tear under its own weight"], "a": [0], "r": "Disuse can cause muscle tissue to atrophy. Separately, disuse causes tendons and ligaments to tighten or shorten, producing contractures.", "id": "s16-2"}, {"s": 16, "t": "mc", "q": "What does disuse do to the tendons and ligaments?", "o": ["Causes them to atrophy and waste away", "Causes them to tighten or shorten", "Causes them to stretch and loosen", "Causes them to calcify within the joint"], "a": [1], "r": "Disuse can cause tendons and ligaments to tighten or shorten. This causes painful contractures of the joints and loss of function and range of motion.", "id": "s16-3"}, {"s": 16, "t": "sata", "q": "What does a contracture cause? Select all that apply.", "o": ["Painful joints", "Loss of function", "Loss of range of motion", "Demineralization of the bone", "Ischemia of the overlying skin"], "a": [0, 1, 2], "r": "Tendons and ligaments tightening or shortening causes painful contractures of the joints and loss of function and range of motion.", "id": "s16-4"}, {"s": 17, "t": "sata", "q": "Which are psychosocial effects of impaired mobility? Select all that apply.", "o": ["Impaired self-esteem", "Depression", "Anxiety", "Disrupted sleep and rest patterns", "Hypercalcemia", "Contractures"], "a": [0, 1, 2, 3], "r": "The psychosocial effects are impaired self-esteem, depression, anxiety, and disrupted sleep and rest patterns.", "id": "s17-1"}, {"s": 17, "t": "sata", "q": "Which areas of daily life does immobility affect? Select all that apply.", "o": ["Activities of daily living", "Community participation", "Family life", "Work", "Exercise and leisure", "Urinary output"], "a": [0, 1, 2, 3, 4], "r": "Short or long-term immobility affects mood and impacts the ability to participate in daily activities: ADLs, community, family, work, exercise and leisure.", "id": "s17-2"}, {"s": 17, "t": "mc", "q": "What leads to impaired self-esteem, depression and anxiety in an immobile client?", "o": ["The medications prescribed for pain", "The loss of independence", "The hospital environment itself", "The increase in calcium in the bloodstream"], "a": [1], "r": "The loss of independence leads to impaired self-esteem, depression and anxiety.", "id": "s17-3"}, {"s": 17, "t": "mc", "q": "What combination results when sleep patterns are disrupted by immobility?", "o": ["Hypersomnia and daytime sedation", "Insomnia and chronic fatigue", "Night terrors and early waking", "Restlessness and agitation only"], "a": [1], "r": "Sleep patterns are disrupted, resulting in a combination of insomnia and chronic fatigue.", "id": "s17-4"}, {"s": 18, "t": "mc", "q": "A nurse cares for an 82-year-old woman who has had two urinary tract infections this year related to immobility. Which finding would the nurse expect?", "o": ["Improved renal blood supply to the kidneys", "Urinary stasis", "Decreased urinary calcium", "Acidic urine formation"], "a": [1], "r": "Urinary stasis is the stopping of urine flow. When a client is immobile, the urine has to work against gravity, which causes it to pool in the urinary tract. The pooling of urine and the potential of backflow creates a reservoir for bacteria to grow, leading to UTIs.", "id": "s18-1"}, {"s": 18, "t": "mc", "q": "What is urinary stasis?", "o": ["An increase in the rate of urine production", "The stopping of urine flow", "The backward flow of urine into the bladder", "The crystallization of minerals within the urine"], "a": [1], "r": "Urinary stasis is the stopping of urine flow. In the immobile client urine works against gravity and pools in the urinary tract.", "id": "s18-2"}, {"s": 19, "t": "sata", "q": "Which lifestyle habits support musculoskeletal health? Select all that apply.", "o": ["Diet", "Exercise", "Screenings", "Bone density testing", "Weight gain"], "a": [0, 1], "r": "Under lifestyle habits the two areas are diet and exercise. Screenings and modifiable risk factors are the other two health promotion areas.", "id": "s19-1"}, {"s": 19, "t": "match", "q": "Match each nutrient to its role in musculoskeletal health.", "p": [["Calcium", "Found in leafy greens, dairy products and soybeans"], ["Vitamin D", "Helps the body absorb calcium"], ["Protein", "Needed for muscle growth and repair"]], "r": "All three matter for the musculoskeletal system. Calcium builds bone, vitamin D is what lets the body absorb that calcium, and protein builds and repairs the muscle.", "id": "s19-2"}, {"s": 19, "t": "sata", "q": "Which foods are good sources of calcium? Select all that apply.", "o": ["Leafy green vegetables such as spinach and kale", "Dairy products", "Soybeans", "Egg yolks", "Poultry and beef"], "a": [0, 1, 2], "r": "Calcium sources are leafy green vegetables such as spinach and kale, dairy products, and soybeans.", "id": "s19-3"}, {"s": 19, "t": "sata", "q": "Which foods are good sources of vitamin D? Select all that apply.", "o": ["Foods fortified with vitamin D such as milk and cereal", "Mushrooms", "Egg yolks", "Spinach and kale", "Soybeans"], "a": [0, 1, 2], "r": "Vitamin D sources are foods fortified with vitamin D such as milk and cereal, mushrooms, and egg yolks.", "id": "s19-4"}, {"s": 19, "t": "mc", "q": "What is the role of protein in musculoskeletal health?", "o": ["It helps the body absorb calcium from the diet", "It supports muscle growth and repair", "It stores minerals within the bone matrix", "It keeps the joint cartilage flexible"], "a": [1], "r": "Protein is needed for muscle growth and repair. Sources given are eggs, poultry, beef and lamb.", "id": "s19-5"}, {"s": 19, "t": "sata", "q": "What does exercise do for the musculoskeletal system? Select all that apply.", "o": ["Stimulates the body to build muscle", "Helps maintain flexibility", "Prevents the worsening of some joint disorders", "Increases the body's absorption of calcium", "Reverses an existing fracture"], "a": [0, 1, 2], "r": "Exercise stimulates the body to build muscle, helps maintain flexibility, and prevents the worsening of some joint disorders such as osteoarthritis.", "id": "s19-6"}, {"s": 20, "t": "mc", "q": "Which modifiable risk factor is identified for mobility problems?", "o": ["Advancing age", "Obesity", "Female sex", "Family history"], "a": [1], "r": "Obesity is the modifiable risk factor named. Excess weight strains the joints, increases the rate at which cartilage is destroyed, and decreases activity tolerance.", "id": "s20-1"}, {"s": 20, "t": "sata", "q": "How does obesity affect the musculoskeletal system? Select all that apply.", "o": ["Excess weight strains the joints", "It increases the rate at which cartilage is destroyed", "It decreases activity tolerance", "It causes the bones to demineralize", "It shortens the tendons and ligaments"], "a": [0, 1, 2], "r": "Excess weight strains the joints, increases the rate at which cartilage is destroyed, and decreases activity tolerance for things like climbing stairs and walking.", "id": "s20-2"}, {"s": 20, "t": "mc", "q": "How are screenings for musculoskeletal disorders described?", "o": ["They are routine for all adults over the age of 40, at every annual visit", "They are not routine, but are available for individuals with specific risk factors", "They are performed only after an injury has already occurred", "They are required annually for every school-aged child in the state"], "a": [1], "r": "Screenings to prevent or detect musculoskeletal disorders are not routine, but are available for individuals with specific risk factors.", "id": "s20-3"}, {"s": 20, "t": "match", "q": "Match each screening to the population and condition it targets.", "p": [["Bone density test", "Older adults, to detect osteoporosis"], ["Spinal screening", "School-aged children, to detect scoliosis"]], "r": "Two screenings are named: the bone density test in older adults for osteoporosis, and spinal screenings in school-aged children for scoliosis.", "id": "s20-4"}, {"s": 20, "t": "mc", "q": "What is osteoporosis?", "o": ["Degeneration of the cartilage within a joint", "A disease where bone mass decreases", "An abnormal curvature of the spine", "An autoimmune inflammation of the joints"], "a": [1], "r": "Osteoporosis is a disease where bone mass decreases. The bone density test is used in older adults to detect it.", "id": "s20-5"}, {"s": 21, "t": "sata", "q": "Which four assessments are used for a client with impaired mobility? Select all that apply.", "o": ["Observation", "Patient interview", "Physical examination", "Diagnostic tests", "Nursing diagnosis", "Discharge planning"], "a": [0, 1, 2, 3], "r": "Assessment of the patient for alterations in mobility includes observation, patient interview, physical assessment and diagnostic tests.", "id": "s21-1"}, {"s": 21, "t": "mc", "q": "Which of these is one of the four assessments for impaired mobility?", "o": ["Nursing diagnosis", "Observation", "Care planning", "Patient education"], "a": [1], "r": "The four assessments are observation, patient interview, physical examination and diagnostic tests.", "id": "s21-2"}, {"s": 21, "t": "sata", "q": "Which findings belong to the observation portion of the assessment? Select all that apply.", "o": ["Balance", "Uneven gait", "Difficulty bearing weight", "Use of assistive devices", "Grimacing, moaning or wincing", "Results of a bone density scan"], "a": [0, 1, 2, 3, 4], "r": "Observation covers balance, uneven gait, difficulty bearing weight, use of assistive devices, and grimacing, moaning or wincing.", "id": "s21-3"}, {"s": 21, "t": "mc", "q": "A client enters the clinic walking with an uneven gait and wincing. Which part of the assessment is the nurse performing?", "o": ["Patient interview", "Observation", "Physical examination", "Diagnostic testing"], "a": [1], "r": "Balance, uneven gait, difficulty bearing weight, use of assistive devices, and grimacing, moaning or wincing all belong to observation.", "id": "s21-4"}, {"s": 22, "t": "sata", "q": "Which three areas make up the patient interview? Select all that apply.", "o": ["History", "Current problem", "Lifestyle", "Diagnostic results", "Physical examination findings"], "a": [0, 1, 2], "r": "The patient interview covers history, current problem and lifestyle.", "id": "s22-1"}, {"s": 22, "t": "match", "q": "Match each part of the patient interview to an example question from it.", "p": [["History", "Have you experienced any injuries, or does your family have a history of musculoskeletal disorders?"], ["Current problem", "Do you have pain, and do your symptoms limit your ADLs?"], ["Lifestyle", "Describe your typical diet and activity in the last 24 hours"]], "r": "History looks backward at injuries and family history, current problem asks about pain, limits on ADLs and assistive devices, and lifestyle asks about diet and activity in the last 24 hours.", "id": "s22-2"}, {"s": 22, "t": "sata", "q": "Which questions belong to the current problem section of the interview? Select all that apply.", "o": ["Do you have pain?", "Do your symptoms limit your ADLs?", "Do you use an assistive device?", "Describe your injury.", "Do you have a family history of Parkinson disease?"], "a": [0, 1, 2, 3], "r": "Current problem asks about pain, whether symptoms limit ADLs, whether an assistive device is used, and asks the patient to describe the injury.", "id": "s22-3"}, {"s": 23, "t": "sata", "q": "What does the cardiovascular physical examination include? Select all that apply.", "o": ["Measuring blood pressure lying, sitting and then standing", "Assessing for edema", "Assessing for DVT using redness, swelling, warmth and pain", "Measuring the circumference of both calves", "Auscultating the bowel sounds", "Observing for contractures"], "a": [0, 1, 2, 3], "r": "The cardiovascular exam measures blood pressure for orthostatic hypotension, taken lying flat, sitting and then standing; assesses for edema; and assesses for DVT using Homan's sign (not a reliable indicator), redness, swelling with the circumference of both calves measured, warmth and pain.", "id": "s23-1"}, {"s": 23, "t": "mc", "q": "How is blood pressure measured to assess for orthostatic hypotension?", "o": ["Once while the client is seated comfortably", "Lying flat, then sitting, then standing", "In both arms while the client is standing", "Before and after a short walk down the hall"], "a": [1], "r": "Measure blood pressure for orthostatic hypotension lying flat, sitting and then standing.", "id": "s23-2"}, {"s": 23, "t": "sata", "q": "What does the respiratory physical examination include? Select all that apply.", "o": ["Observing the chest wall for symmetry to ensure equal expansion", "Auscultating lung sounds for adventitious sounds", "Observing whether the cough is productive", "Measuring the circumference of both calves", "Assessing range of motion"], "a": [0, 1, 2], "r": "The respiratory exam observes the chest wall for symmetry to ensure equal chest expansion, auscultates the lung sounds to identify adventitious sounds such as crackles and wheezing, and observes whether the cough is productive.", "id": "s23-3"}, {"s": 23, "t": "sata", "q": "What does the metabolic physical examination include? Select all that apply.", "o": ["Assessing food intake", "Measuring weight and height", "Auscultating bowel sounds", "Assessing urine output", "Observing for skin breakdown"], "a": [0, 1], "r": "The metabolic exam assesses food intake and measures weight and height.", "id": "s23-4"}, {"s": 23, "t": "sata", "q": "What does the gastrointestinal physical examination include? Select all that apply.", "o": ["Auscultating bowel sounds for hypoactivity", "Observing feces for consistency and frequency", "Measuring weight and height", "Assessing for peripheral edema", "Assessing range of motion"], "a": [0, 1], "r": "The gastrointestinal exam auscultates bowel sounds for hypoactivity and observes feces for consistency and frequency.", "id": "s23-5"}, {"s": 23, "t": "sata", "q": "Which findings suggest a urinary tract infection on assessment? Select all that apply.", "o": ["Strong odor", "A frequent urge to go that does not go away", "Fever", "Painful or burning urination", "Cloudy, dark or red urine", "Hypoactive bowel sounds"], "a": [0, 1, 2, 3, 4], "r": "Assess urine output for signs of infection: strong odor, a frequent urge to go that does not go away, fever, painful or burning urination, and cloudy, dark or red urine. Also assess the amount of urine output.", "id": "s23-6"}, {"s": 23, "t": "sata", "q": "What does the integumentary physical examination include? Select all that apply.", "o": ["Observing for breakdown", "Assessing bony prominences closely", "Measuring the circumference of both calves", "Observing for contractures", "Assessing food intake"], "a": [0, 1], "r": "The integumentary exam observes for breakdown and assesses bony prominences closely.", "id": "s23-7"}, {"s": 23, "t": "sata", "q": "What does the musculoskeletal physical examination include? Select all that apply.", "o": ["Assessing range of motion and muscle strength", "Observing for contractures", "Monitoring the use of assistive devices", "Auscultating bowel sounds", "Measuring blood pressure in three positions"], "a": [0, 1, 2], "r": "The musculoskeletal exam assesses range of motion and muscle strength, observes for contractures, and monitors the use of assistive devices.", "id": "s23-8"}, {"s": 23, "t": "sata", "q": "What does the psychosocial assessment include? Select all that apply.", "o": ["Observing for an unusual sleep and wake pattern", "Monitoring social activity", "Assessing ADLs", "Assessing for behavioral changes", "Measuring height and weight", "Observing for skin breakdown"], "a": [0, 1, 2, 3], "r": "The psychosocial assessment observes for an unusual sleep and wake pattern, monitors social activity, assesses ADLs, and assesses for behavioral changes.", "id": "s23-9"}, {"s": 24, "t": "sata", "q": "Which diagnostic tests are used in the assessment of mobility? Select all that apply.", "o": ["Bone density scans", "CT", "MRI", "X-rays", "Arterial blood gases", "Urine culture"], "a": [0, 1, 2, 3], "r": "The diagnostic tests are bone density scans, and CT, MRI and x-rays to view bone and connective tissue health.", "id": "s24-1"}, {"s": 24, "t": "mc", "q": "What do CT, MRI and x-rays show in a mobility assessment?", "o": ["The strength of the surrounding muscles", "Bone and connective tissue health", "The adequacy of the blood supply to the limb", "The level of calcium in the bloodstream"], "a": [1], "r": "CT, MRI and x-rays are used to view bone and connective tissue health. Bone density scans are the other diagnostic test listed.", "id": "s24-2"}, {"s": 24, "t": "mc", "q": "Which diagnostic test would be used to evaluate an older adult for osteoporosis?", "o": ["An MRI of the spine", "A bone density scan", "A CT of the hip", "A plain x-ray"], "a": [1], "r": "A bone density test is used for older adults to detect osteoporosis, a disease where bone mass decreases.", "id": "s24-3"}, {"s": 25, "t": "sata", "q": "Which nursing diagnoses are related to mobility? Select all that apply.", "o": ["Activity intolerance", "Ineffective coping", "Impaired gas exchange", "Risk for injury", "Acute or chronic pain", "Fluid volume excess"], "a": [0, 1, 2, 3, 4], "r": "The nursing diagnoses related to mobility are activity intolerance, ineffective coping, impaired gas exchange, risk for injury, acute or chronic pain, and impaired physical mobility.", "id": "s25-1"}, {"s": 25, "t": "mc", "q": "Which nursing diagnosis most directly names the mobility problem itself?", "o": ["Activity intolerance", "Impaired physical mobility", "Risk for injury", "Ineffective coping"], "a": [1], "r": "Impaired physical mobility is the diagnosis that names the problem directly. The others describe its consequences and related risks.", "id": "s25-2"}, {"s": 26, "t": "sata", "q": "Which nursing interventions support the cardiovascular system of an immobile client? Select all that apply.", "o": ["Move the client gradually when sitting and standing up", "Apply sequential compression devices", "Administer heparin or Lovenox to prevent clotting", "Perform range of motion exercises", "Apply anti-embolism stockings", "Reposition the client every 2 hours"], "a": [0, 1, 2, 3, 4], "r": "The five cardiovascular interventions are moving the client gradually when sitting and standing to prevent orthostatic hypotension, SCDs, administering heparin or Lovenox to prevent clotting, range of motion exercises, and anti-embolism stockings.", "id": "s26-1"}, {"s": 26, "t": "mc", "q": "Why is the client moved gradually when sitting up and standing?", "o": ["To avoid dislodging an existing clot in the leg", "To prevent orthostatic hypotension", "To reduce the pressure over the bony prominences", "To avoid straining the weakened back muscles"], "a": [1], "r": "Moving the client gradually when sitting and standing up prevents orthostatic hypotension, the sudden drop in blood pressure with position change.", "id": "s26-2"}, {"s": 26, "t": "sata", "q": "Which interventions are aimed specifically at preventing clot formation? Select all that apply.", "o": ["Sequential compression devices", "Heparin or Lovenox", "Anti-embolism stockings", "Range of motion exercises", "Incentive spirometry", "Stool softeners"], "a": [0, 1, 2, 3], "r": "SCDs, heparin or Lovenox, anti-embolism stockings and range of motion exercises all work against the venous stasis and clotting that immobility causes.", "id": "s26-3"}, {"s": 27, "t": "sata", "q": "Which nursing interventions support the respiratory system of an immobile client? Select all that apply.", "o": ["Reposition every 2 hours", "Teach the use of an incentive spirometer", "Teach cough and deep breathing exercises", "Administer heparin", "Apply anti-embolism stockings"], "a": [0, 1, 2], "r": "The respiratory interventions are repositioning every 2 hours, teaching the use of an incentive spirometer, and teaching cough and deep breathing exercises.", "id": "s27-1"}, {"s": 27, "t": "mc", "q": "How often should an immobile client be repositioned?", "o": ["Every hour", "Every 2 hours", "Every 4 hours", "Every shift"], "a": [1], "r": "Reposition every 2 hours. This appears under both the respiratory and integumentary interventions.", "id": "s27-2"}, {"s": 27, "t": "mc", "q": "Why is an incentive spirometer taught to an immobile client?", "o": ["To measure how much air the client can forcefully exhale", "To promote lung expansion and prevent the alveoli from collapsing", "To loosen secretions through chest wall vibration", "To measure the client's activity tolerance over time"], "a": [1], "r": "Teaching the use of an incentive spirometer is a respiratory intervention. Immobility impairs full lung expansion, which causes the alveoli to collapse into atelectasis.", "id": "s27-3"}, {"s": 27, "t": "mc", "q": "What is the nursing intervention for metabolic processes in an immobile client?", "o": ["Administer calcium supplements", "Monitor oral intake", "Measure serum calcium daily", "Restrict dietary protein"], "a": [1], "r": "Monitoring oral intake is the intervention listed for metabolic processes. Lack of movement decreases caloric output, which causes weight gain.", "id": "s27-4"}, {"s": 28, "t": "sata", "q": "Which nursing interventions support the gastrointestinal system of an immobile client? Select all that apply.", "o": ["Maintain adequate hydration to help prevent constipation", "Administer a stool softener, laxative or enema", "Reposition every 2 hours", "Place the client upright on a bed pan", "Apply sequential compression devices"], "a": [0, 1], "r": "The gastrointestinal interventions are maintaining adequate hydration to help prevent constipation, and giving a stool softener, laxative or enema.", "id": "s28-1"}, {"s": 28, "t": "mc", "q": "How much fluid is recommended daily to help prevent constipation?", "o": ["Approximately 32 ounces, or 1000 mL", "Approximately 64 ounces, or 1900 to 2000 mL", "Approximately 100 ounces, or 3000 mL", "As much as the client will tolerate"], "a": [1], "r": "Maintain adequate hydration at approximately 64 ounces, or 1900 to 2000 mL per day, to help prevent constipation.", "id": "s28-2"}, {"s": 28, "t": "sata", "q": "Which nursing interventions support the urinary system of an immobile client? Select all that apply.", "o": ["Promote bladder emptying by placing the client upright on a bed pan", "Use an intermittent or indwelling urinary catheter if necessary", "Maintain adequate hydration at 2000 mL per day", "Administer a stool softener", "Reposition every 2 hours"], "a": [0, 1], "r": "The urinary interventions are promoting bladder emptying by placing the client upright on a bed pan, and using an intermittent or indwelling urinary catheter if necessary.", "id": "s28-3"}, {"s": 28, "t": "mc", "q": "Why is the client placed upright on a bed pan?", "o": ["To reduce pressure over the sacrum", "To promote bladder emptying", "To make the specimen easier to collect", "To prevent orthostatic hypotension"], "a": [1], "r": "Placing the client upright on a bed pan promotes bladder emptying, which counters the urinary stasis that occurs when urine must work against gravity.", "id": "s28-4"}, {"s": 29, "t": "sata", "q": "Which nursing interventions support the skin of an immobile client? Select all that apply.", "o": ["Monitor nutritional status", "Reposition every 2 hours", "Use pillow support", "Teach clients who can move independently to move every 15 minutes", "Apply anti-embolism stockings", "Administer a stool softener"], "a": [0, 1, 2, 3], "r": "The integumentary interventions are monitoring nutritional status, repositioning every 2 hours, pillow support, and teaching clients who can move independently to move every 15 minutes.", "id": "s29-1"}, {"s": 29, "t": "mc", "q": "How often should a client who can move independently be taught to shift position?", "o": ["Every 5 minutes", "Every 15 minutes", "Every 30 minutes", "Every 2 hours"], "a": [1], "r": "Teach clients who can move independently to move every 15 minutes. The every-2-hour repositioning is what the nurse performs for clients who cannot.", "id": "s29-2"}, {"s": 29, "t": "mc", "q": "Why is nutritional status monitored as a skin intervention?", "o": ["Poor nutrition increases the risk of skin breakdown", "A high-protein diet prevents contractures of the joints", "Calcium intake affects the elasticity of the skin", "Fluid intake alone determines skin integrity"], "a": [1], "r": "Monitoring nutritional status is listed among the integumentary interventions, alongside repositioning every 2 hours, pillow support, and teaching independent clients to move every 15 minutes.", "id": "s29-3"}, {"s": 30, "t": "sata", "q": "Why is exercise vital for an immobile client? Select all that apply.", "o": ["It maintains muscle strength", "It promotes venous return", "It decreases and prevents joint stiffness", "It increases flexibility", "It reverses existing contractures immediately", "It eliminates the need for repositioning"], "a": [0, 1, 2, 3], "r": "Exercise is vital to maintaining muscle strength, promoting venous return, decreasing and preventing joint stiffness, and increasing flexibility.", "id": "s30-1"}, {"s": 30, "t": "match", "q": "Match each type of exercise to its description.", "p": [["Range of motion", "Moving a joint through its arc, either passively or actively"], ["Resistive exercise", "Active exercise working against resistance to increase strength"], ["Isometric exercise", "Tightening a muscle without the joint or muscle length changing"]], "r": "Range of motion keeps the joint mobile, resistive exercise builds strength against a force, and isometric exercise builds strength without moving the joint, which is why it suits clients who have pain with joint movement.", "id": "s30-2"}, {"s": 30, "t": "mc", "q": "What are the two forms of range of motion exercise?", "o": ["Isometric and resistive", "Passive and active", "Static and dynamic", "Assisted and independent"], "a": [1], "r": "Range of motion is either PROM, passive range of motion, or AROM, active range of motion.", "id": "s30-3"}, {"s": 30, "t": "mc", "q": "What is a resistive exercise?", "o": ["An exercise in which the joint does not move and the muscle holds still", "An active exercise in which the patient works against resistance to build strength", "A passive movement of the joint through its full arc by the nurse or therapist", "A breathing exercise that strengthens the muscles used for respiration"], "a": [1], "r": "Resistive exercises are active exercises in which the patient works against resistance to increase strength. Weights, or the nurse, OT or PT, supply the resistive force.", "id": "s30-4"}, {"s": 30, "t": "mc", "q": "Who or what can supply the resistive force in a resistive exercise?", "o": ["Only free weights", "Weights, or the nurse, OT or PT", "Only a resistance band", "The client's own opposite limb only"], "a": [1], "r": "In resistive exercise, weights or the nurse, OT or PT supply the resistive force.", "id": "s30-5"}, {"s": 30, "t": "mc", "q": "What happens to the muscle and joint during an isometric exercise?", "o": ["The muscle shortens and the joint moves through its full arc", "The muscle does not noticeably change length and the joint does not move", "The muscle lengthens while the joint is held still", "The joint moves while the muscle stays relaxed"], "a": [1], "r": "In isometric exercise the muscle tightens, but it does not noticeably change length and the affected joint does not move.", "id": "s30-6"}, {"s": 31, "t": "mc", "q": "What is ambulation?", "o": ["Moving a joint through its full range of motion, actively or passively", "The ability to walk from place to place, with or without assistive devices", "Transferring from the bed to a chair with the assistance of staff", "Shifting position in the bed every two hours to relieve pressure"], "a": [1], "r": "Ambulation is the ability to walk from place to place with or without assistive devices.", "id": "s31-1"}, {"s": 31, "t": "sata", "q": "What does getting the client out of bed decrease the risk of? Select all that apply.", "o": ["Osteoporosis", "DVT", "Constipation", "Muscle atrophy", "Hypertension", "Fracture"], "a": [0, 1, 2, 3], "r": "Getting the patient out of bed decreases risk for osteoporosis, DVTs, constipation and muscle atrophy, among others.", "id": "s31-2"}, {"s": 31, "t": "mc", "q": "What is usually prescribed for a client instead of remaining in bed?", "o": ["Passive range of motion only", "Early ambulation", "Isometric exercise only", "Complete bedrest with repositioning"], "a": [1], "r": "Early ambulation is usually prescribed for a client instead of remaining in bed during their hospital stay or home recovery period.", "id": "s31-3"}, {"s": 31, "t": "sata", "q": "What is the purpose of an assistive device? Select all that apply.", "o": ["To provide support and balance for the patient", "To reduce pressure exerted on an injured limb", "To help prevent further injury", "To assist in healing", "To replace the need for physical therapy", "To eliminate the need for ambulation"], "a": [0, 1, 2, 3], "r": "Assistive devices provide support and balance for the patient. They reduce pressure exerted on an injured limb, help prevent further injury, and assist in healing.", "id": "s31-4"}, {"s": 31, "t": "sata", "q": "Which are the assistive devices listed? Select all that apply.", "o": ["Canes", "Crutches", "Walkers", "Sequential compression devices", "Anti-embolism stockings"], "a": [0, 1, 2], "r": "The assistive devices listed are canes, crutches and walkers.", "id": "s31-5"}, {"s": 32, "t": "sata", "q": "Which nursing interventions support the psychosocial needs of an immobile client? Select all that apply.", "o": ["Involve the client in daily care", "Provide stimulation such as books, crafts and television", "Continuously reorient the client if immobility causes confusion", "Have nurses and other staff interact with the client", "Limit visitors to reduce fatigue", "Keep the room dark and quiet at all times"], "a": [0, 1, 2, 3], "r": "The psychosocial interventions are involving clients in daily care, providing stimulation such as books, crafts and television, continuously reorienting the client to time, person and place if immobility causes confusion, and having nurses and other staff interact with the client.", "id": "s32-1"}, {"s": 32, "t": "mc", "q": "To what should the nurse reorient a confused immobile client?", "o": ["Time, person and place", "The plan of care only", "The reason for the hospitalization", "The names of the staff on duty"], "a": [0], "r": "Continuously reorient the client to time, person and place if immobility causes confusion.", "id": "s32-2"}, {"s": 32, "t": "mc", "q": "Why is the client involved in their own daily care?", "o": ["It reduces the nurse's workload on a busy unit", "It addresses the loss of independence that harms self-esteem", "It satisfies the documentation requirement for ADLs", "It prevents contractures of the upper extremities"], "a": [1], "r": "Involving clients in daily care is a psychosocial intervention. The loss of independence from immobility is what leads to impaired self-esteem, depression and anxiety.", "id": "s32-3"}, {"s": 33, "t": "mc", "q": "Why should the nurse be aware of proper body mechanics?", "o": ["To meet the facility's annual competency requirement", "To prevent work-related injuries", "To reduce the time each transfer takes", "To avoid the need for assistive devices"], "a": [1], "r": "It is important to teach clients about proper body mechanics, and as the nurse to be aware of proper body mechanics to prevent work-related injuries.", "id": "s33-1"}, {"s": 33, "t": "mc", "q": "How should the nurse position the feet before lifting?", "o": ["Together, directly under the hips", "Apart, with one foot slightly forward", "Apart, with both feet in line with each other", "Crossed, with the weight on the back foot"], "a": [1], "r": "Start with the feet apart, with one foot slightly forward, to provide balance.", "id": "s33-2"}, {"s": 33, "t": "mc", "q": "Where should the nurse bend when lifting?", "o": ["At the back", "At the knees", "At the waist", "At the hips and waist together"], "a": [1], "r": "Bend at the knees, not the back.", "id": "s33-3"}, {"s": 33, "t": "mc", "q": "Which muscles should be used to lift heavy objects?", "o": ["The back muscles, which are closest to the load", "The large muscles of the legs and arms", "The abdominal muscles, braced throughout", "The shoulder muscles, with the arms extended"], "a": [1], "r": "Use the large muscles of the legs and arms rather than the weaker back muscles to lift heavy objects.", "id": "s33-4"}, {"s": 33, "t": "mc", "q": "How close should the nurse stand to the object being lifted?", "o": ["At arm's length, to keep the back straight", "Close to the object, lifting it straight up", "Far enough away to bend at the waist", "Whatever distance feels comfortable"], "a": [1], "r": "Stand close to the object and lift it straight up.", "id": "s33-5"}, {"s": 33, "t": "mc", "q": "How should weight be distributed while lifting?", "o": ["Mostly on the forward foot", "Evenly between the two feet", "Mostly on the back foot", "Shifted from one foot to the other"], "a": [1], "r": "Distribute weight evenly between the two feet.", "id": "s33-6"}, {"s": 33, "t": "mc", "q": "How should the nurse change direction while carrying a load?", "o": ["Twist at the waist to face the new direction", "Use the feet to pivot", "Turn with the back while keeping the feet planted", "Set the object down and start over each time"], "a": [1], "r": "Use the feet to pivot rather than twisting or turning with the back.", "id": "s33-7"}, {"s": 33, "t": "mc", "q": "When should a back brace be used?", "o": ["For any lift over ten pounds", "For frequent heavy lifting", "Only after a back injury has occurred", "During every patient transfer"], "a": [1], "r": "Use a back brace to support the back for frequent heavy lifting.", "id": "s33-8"}, {"s": 33, "t": "mc", "q": "What should the nurse do instead of lifting an object, when possible?", "o": ["Ask another staff member to lift it alone", "Slide, roll or push the object", "Lift it in two smaller stages", "Use the back brace and lift normally"], "a": [1], "r": "If possible, slide, roll or push an object rather than lift it.", "id": "s33-9"}, {"s": 33, "t": "mc", "q": "What should the nurse do if an object is too heavy to lift alone?", "o": ["Use a back brace and lift it carefully", "Ask for help", "Slide it along the floor instead", "Lift it with the back straight and knees locked"], "a": [1], "r": "If the object is too heavy to lift alone, ask for help.", "id": "s33-10"}];
+const TITLES = {"1": "Musculoskeletal System Review", "2": "Back Problems and Fractures", "3": "Multiple Sclerosis", "4": "Parkinson Disease", "5": "Osteoarthritis and Joint Disorders", "6": "Spinal Cord Injuries", "7": "Traumatic Injuries", "8": "Amputations", "9": "Effects: Cardiovascular", "10": "Effects: Respiratory", "11": "Effects: Metabolic", "12": "Effects: Gastrointestinal", "13": "Pop Quiz: Atelectasis", "14": "Effects: Urinary", "15": "Effects: Integumentary", "16": "Effects: Musculoskeletal", "17": "Effects: Psychosocial", "18": "Pop Quiz: Urinary Stasis", "19": "Diet and Lifestyle Habits", "20": "Risk Factors and Screenings", "21": "The Four Assessments", "22": "Patient Interview", "23": "Physical Examination by System", "24": "Diagnostic Tests", "25": "Nursing Diagnosis", "26": "Interventions: Cardiovascular", "27": "Interventions: Respiratory and Metabolic", "28": "Interventions: Gastrointestinal and Urinary", "29": "Interventions: Integumentary", "30": "Interventions: Exercise", "31": "Interventions: Ambulation and Assistive Devices", "32": "Interventions: Psychosocial", "33": "Proper Body Mechanics"};
+const GROUPS = [{"name": "The musculoskeletal system", "slides": [1]}, {"name": "Alterations in mobility", "slides": [2, 3, 4, 5, 6, 7, 8]}, {"name": "Effects of impaired mobility, part 1", "slides": [9, 10, 11, 12, 13]}, {"name": "Effects of impaired mobility, part 2", "slides": [14, 15, 16, 17, 18]}, {"name": "Health promotion", "slides": [19, 20]}, {"name": "Nursing assessment and diagnosis", "slides": [21, 22, 23, 24, 25]}, {"name": "Nursing interventions by system", "slides": [26, 27, 28, 29, 32]}, {"name": "Exercise, ambulation and body mechanics", "slides": [30, 31, 33]}];
+const SECTION_LABEL = {"1": "Slide 4", "2": "Slide 5", "3": "Slide 5", "4": "Slide 5", "5": "Slide 5", "6": "Slide 5", "7": "Slide 5", "8": "Slide 5", "9": "Slide 6", "10": "Slide 6", "11": "Slide 6", "12": "Slide 6", "13": "Slide 7", "14": "Slide 8", "15": "Slide 8", "16": "Slide 8", "17": "Slide 8", "18": "Slide 9", "19": "Slide 10", "20": "Slide 10", "21": "Slide 11", "22": "Slide 11", "23": "Slide 11", "24": "Slide 11", "25": "Slide 12", "26": "Slide 13", "27": "Slide 13", "28": "Slide 13", "29": "Slide 13", "30": "Slide 13", "31": "Slide 13", "32": "Slide 13", "33": "Slide 14"};
+const TYPE_LABEL = {mc:"Multiple choice", sata:"Select all that apply", match:"Matching"};
+const LETTERS = "ABCDEFGHIJ";
+const KEY_SEEN = "mobilityTB.seen.v1";
+const KEY_MISSED = "mobilityTB.missed.v1";
+const KEY_RUNS = "mobilityTB.runs.v1";
+
+/* ---------------- storage (best effort) ---------------- */
+function load(key, fallback){
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch(e){ return fallback; }
+}
+function save(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+}
+let seen = new Set(load(KEY_SEEN, []));
+let missed = new Set(load(KEY_MISSED, []));
+let runs = load(KEY_RUNS, []);
+function persist(){
+  save(KEY_SEEN, [...seen]); save(KEY_MISSED, [...missed]); save(KEY_RUNS, runs.slice(-40));
+}
+
+/* ---------------- helpers ---------------- */
+function el(tag, cls, txt){
+  const n = document.createElement(tag);
+  if(cls) n.className = cls;
+  if(txt !== undefined) n.textContent = txt;
+  return n;
+}
+function shuffle(a){
+  a = [...a];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function byId(id){ return QUESTIONS.find(q => q.id === id); }
+function plural(n, w){ return n + " " + w + (n === 1 ? "" : "s"); }
+function mmss(ms){
+  const s = Math.floor(ms/1000);
+  return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0");
+}
+
+/* ---------------- question rendering ---------------- */
+/* mode: "study" = check button + instant rationale; "exam" = collect only; "review" = show result */
+function renderQuestion(q, opts){
+  const o = opts || {};
+  const card = el("article","q");
+  card.dataset.type = q.t;
+
+  const head = el("div","qhead");
+  if(o.label !== undefined) head.appendChild(el("span","qnum", o.label));
+  head.appendChild(el("span","qtype", TYPE_LABEL[q.t]));
+  if(o.showSlide) head.appendChild(el("span","qslide","Slide " + q.s));
+  card.appendChild(head);
+  card.appendChild(el("p","stem", q.q));
+
+  const state = o.state || {};          // {picked:[origIdx...], order:[...], match:{}}
+  if(!state.order) state.order = shuffle([...Array(q.t === "match" ? q.p.length : q.o.length).keys()]);
+
+  if(q.t === "match") buildMatch(card, q, state, o);
+  else buildChoice(card, q, state, o);
+
+  if(o.mode === "review"){
+    const gotIt = isCorrect(q, state);
+    const line = q.t === "match"
+      ? "Correct matches are shown beside each item."
+      : "Answer: " + answerLetters(q, state).join(", ") + ".";
+    const r = el("div","rat");
+    r.appendChild(el("span","ans", (state.picked === undefined && !state.match ? "Skipped. " : (gotIt ? "Correct. " : "Not quite. ")) + line));
+    if(q.r) r.appendChild(document.createTextNode(q.r));
+    card.appendChild(r);
+    if(q.f){
+      const n = el("div","note");
+      n.appendChild(el("span","t","Instructor update. "));
+      n.appendChild(document.createTextNode(q.f));
+      card.appendChild(n);
+    }
+  }
+  return card;
+}
+
+function answerLetters(q, state){
+  if(q.t === "match") return state.order.map((_, i) => LETTERS[i]);
+  const ans = new Set(q.a);
+  return state.order.map((orig, pos) => ans.has(orig) ? LETTERS[pos] : null)
+                    .filter(Boolean).sort();
+}
+
+function isCorrect(q, state){
+  if(q.t === "match"){
+    return q.p.every((_, idx) => (state.match || {})[idx] === LETTERS[state.order.indexOf(idx)]);
+  }
+  const picked = new Set(state.picked || []);
+  const ans = new Set(q.a);
+  if(picked.size !== ans.size) return false;
+  for(const a of ans) if(!picked.has(a)) return false;
+  return true;
+}
+
+function buildChoice(card, q, state, o){
+  const multi = q.t === "sata";
+  if(!state.picked) state.picked = [];
+  const picked = new Set(state.picked);
+  const list = el("ul","opts");
+  const buttons = [];
+  const locked = o.mode === "review";
+
+  state.order.forEach((orig, pos) => {
+    const li = el("li");
+    const b = el("button","opt" + (multi ? "" : " round"));
+    b.type = "button";
+    b.setAttribute("aria-pressed", picked.has(orig) ? "true" : "false");
+    b.appendChild(el("span","box", LETTERS[pos]));
+    b.appendChild(el("span","txt", q.o[orig]));
+    b.dataset.orig = orig;
+    if(locked) b.disabled = true;
+    else b.addEventListener("click", () => {
+      if(!multi){ buttons.forEach(x => x.setAttribute("aria-pressed","false")); picked.clear(); }
+      const on = b.getAttribute("aria-pressed") === "true";
+      b.setAttribute("aria-pressed", on ? "false" : "true");
+      if(on) picked.delete(orig); else picked.add(orig);
+      state.picked = [...picked];
+      if(o.onChange) o.onChange();
+    });
+    buttons.push(b);
+    li.appendChild(b);
+    list.appendChild(li);
+  });
+  card.appendChild(list);
+
+  if(locked){
+    const ans = new Set(q.a);
+    buttons.forEach(b => {
+      const i = Number(b.dataset.orig);
+      const chosen = picked.has(i);
+      b.setAttribute("aria-pressed","false");
+      if(ans.has(i) && chosen) b.classList.add("correct");
+      else if(ans.has(i)) b.classList.add("missed");
+      else if(chosen) b.classList.add("incorrect");
+    });
+    return;
+  }
+
+  if(o.mode === "study"){
+    const btn = el("button","btn small", multi ? "Check answers" : "Check answer");
+    btn.type = "button";
+    card.appendChild(btn);
+    btn.addEventListener("click", () => {
+      if(btn.disabled || picked.size === 0) return;
+      btn.disabled = true; btn.textContent = "Answer shown"; btn.classList.add("ghost");
+      const ans = new Set(q.a);
+      buttons.forEach(b => {
+        const i = Number(b.dataset.orig);
+        const chosen = picked.has(i);
+        b.disabled = true; b.setAttribute("aria-pressed","false");
+        if(ans.has(i) && chosen) b.classList.add("correct");
+        else if(ans.has(i)) b.classList.add("missed");
+        else if(chosen) b.classList.add("incorrect");
+      });
+      finishStudy(card, q, state);
+    });
+  }
+}
+
+function buildMatch(card, q, state, o){
+  if(!state.match) state.match = {};
+  const locked = o.mode === "review";
+  const bank = el("div","bank");
+  bank.appendChild(el("div","lbl","Answer bank"));
+  const ol = el("ol"); ol.type = "A";
+  state.order.forEach(i => ol.appendChild(el("li", null, q.p[i][1])));
+  bank.appendChild(ol);
+  card.appendChild(bank);
+
+  const rows = [];
+  const holder = el("div","pairs");
+  q.p.forEach((pair, idx) => {
+    const row = el("div","pair");
+    row.appendChild(el("span","prompt", (idx+1) + ". " + pair[0]));
+    const sel = el("select");
+    sel.setAttribute("aria-label","Match for " + pair[0]);
+    const ph = el("option", null, "—"); ph.value = "";
+    sel.appendChild(ph);
+    state.order.forEach((_, pos) => {
+      const op = el("option", null, LETTERS[pos]); op.value = LETTERS[pos];
+      sel.appendChild(op);
+    });
+    sel.value = state.match[idx] || "";
+    const verdict = el("span","verdict","");
+    if(locked) sel.disabled = true;
+    else sel.addEventListener("change", () => {
+      state.match[idx] = sel.value;
+      if(o.onChange) o.onChange();
+    });
+    row.appendChild(sel); row.appendChild(verdict);
+    holder.appendChild(row);
+    rows.push({row, sel, verdict, correctLetter: LETTERS[state.order.indexOf(idx)]});
+  });
+  card.appendChild(holder);
+
+  function mark(){
+    rows.forEach(r => {
+      r.sel.disabled = true;
+      if(r.sel.value === r.correctLetter){ r.row.classList.add("ok"); r.verdict.textContent = r.correctLetter; }
+      else { r.row.classList.add("no"); r.verdict.textContent = "→ " + r.correctLetter; }
+    });
+  }
+  if(locked){ mark(); return; }
+
+  if(o.mode === "study"){
+    const btn = el("button","btn small","Check matches");
+    btn.type = "button";
+    card.appendChild(btn);
+    btn.addEventListener("click", () => {
+      if(btn.disabled) return;
+      if(rows.every(r => r.sel.value === "")) return;
+      btn.disabled = true; btn.textContent = "Answer shown"; btn.classList.add("ghost");
+      mark();
+      finishStudy(card, q, state);
+    });
+  }
+}
+
+/* study-mode instant feedback */
+let studyAnswered = 0, studyCorrect = 0;
+function finishStudy(card, q, state){
+  const gotIt = isCorrect(q, state);
+  const line = q.t === "match"
+    ? "Correct matches are shown beside each item."
+    : "Answer: " + answerLetters(q, state).join(", ") + ".";
+  const r = el("div","rat");
+  r.appendChild(el("span","ans", (gotIt ? "Correct. " : "Not quite. ") + line));
+  if(q.r) r.appendChild(document.createTextNode(q.r));
+  card.appendChild(r);
+  if(q.f){
+    const n = el("div","note");
+    n.appendChild(el("span","t","Instructor update. "));
+    n.appendChild(document.createTextNode(q.f));
+    card.appendChild(n);
+  }
+  seen.add(q.id);
+  if(gotIt) missed.delete(q.id); else missed.add(q.id);
+  persist();
+  studyAnswered++; if(gotIt) studyCorrect++;
+  const t = document.getElementById("studyTally");
+  if(t) t.innerHTML = "Answered <b>"+studyAnswered+"</b> — <b>"+studyCorrect+"</b> correct";
+}
+
+/* ---------------- STUDY MODE ---------------- */
+function viewStudy(){
+  const app = document.getElementById("app");
+  app.textContent = "";
+  studyAnswered = 0; studyCorrect = 0;
+
+  const bar = el("div","toolbar");
+  const lab = el("label", null, "Jump to"); lab.setAttribute("for","jump");
+  const jump = el("select","jump"); jump.id = "jump";
+  const allOpt = el("option", null, "All slides"); allOpt.value = "top";
+  jump.appendChild(allOpt);
+  bar.appendChild(lab); bar.appendChild(jump);
+
+  const chips = el("div","chips");
+  [["all","All"],["mc","Multiple choice"],["sata","Select all"],["match","Matching"]].forEach(([f,t],i) => {
+    const c = el("button","chip",t);
+    c.dataset.filter = f;
+    c.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+    chips.appendChild(c);
+  });
+  bar.appendChild(chips);
+  const tally = el("div","tally"); tally.id = "studyTally";
+  tally.innerHTML = "Answered <b>0</b> — <b>0</b> correct";
+  bar.appendChild(tally);
+  app.appendChild(bar);
+
+  const bySlide = new Map();
+  QUESTIONS.forEach(q => { if(!bySlide.has(q.s)) bySlide.set(q.s, []); bySlide.get(q.s).push(q); });
+
+  let n = 0;
+  [...bySlide.keys()].sort((a,b)=>a-b).forEach(slide => {
+    const sec = el("section","slide");
+    sec.id = "slide-" + slide;
+    sec.appendChild(el("h2", null, TITLES[slide] || ("Slide " + slide)));
+    const items = bySlide.get(slide);
+    sec.appendChild(el("p","meta",(SECTION_LABEL[slide] || ("Slide " + slide)) + " · " + plural(items.length,"question")));
+    items.forEach(q => { n++; sec.appendChild(renderQuestion(q, {mode:"study", label:String(n)})); });
+    app.appendChild(sec);
+    const op = el("option", null, "Slide " + slide + " — " + (TITLES[slide] || ""));
+    op.value = sec.id;
+    jump.appendChild(op);
+  });
+
+  jump.addEventListener("change", () => {
+    if(jump.value === "top"){ window.scrollTo({top:0,behavior:"smooth"}); return; }
+    const t = document.getElementById(jump.value);
+    if(t) t.scrollIntoView({behavior:"smooth", block:"start"});
+  });
+  chips.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      const f = chip.dataset.filter;
+      chips.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c === chip)));
+      app.querySelectorAll("article.q").forEach(c =>
+        c.classList.toggle("hidden", f !== "all" && c.dataset.type !== f));
+      app.querySelectorAll("section.slide").forEach(sec => {
+        const vis = [...sec.querySelectorAll("article.q")].some(c => !c.classList.contains("hidden"));
+        sec.classList.toggle("hidden", !vis);
+      });
+    });
+  });
+}
+
+/* ---------------- EXAM SETUP ---------------- */
+const setup = {
+  scope: "all",        // "all" | "unit" | "slide" | "missed"
+  unit: 0,             // index into GROUPS when scope === "unit"
+  slide: null,         // slide number when scope === "slide"
+  types: new Set(["mc","sata","match"]),
+  limit: 25,
+  fresh: true
+};
+const ALL_SLIDES = [...new Set(QUESTIONS.map(q => q.s))].sort((a,b) => a-b);
+
+function poolFor(s){
+  let pool = QUESTIONS.filter(q => s.types.has(q.t));
+  if(s.scope === "missed") return pool.filter(q => missed.has(q.id));
+  if(s.scope === "unit"){
+    const g = GROUPS[s.unit] || {slides:[]};
+    return pool.filter(q => g.slides.includes(q.s));
+  }
+  if(s.scope === "slide") return pool.filter(q => q.s === s.slide);
+  return pool;
+}
+
+function viewExamSetup(){
+  const app = document.getElementById("app");
+  app.textContent = "";
+
+  const panel = el("div","panel");
+  panel.appendChild(el("h2", null, "Take a practice exam"));
+  panel.appendChild(el("p","sub","Two quick choices and you're in. Questions and answer choices come up in a different order every time, and you'll get ones you haven't seen before you get any repeats."));
+
+  /* --- 1. what to practice --- */
+  const f1 = el("div","field");
+  f1.appendChild(el("div","h","1. What do you want to practice?"));
+  const choices = el("div","choices");
+
+  function choice(scope, title, sub, disabled){
+    const b = el("button","choice");
+    b.type = "button";
+    b.dataset.scope = scope;
+    b.setAttribute("aria-pressed", String(setup.scope === scope));
+    b.appendChild(el("span","dot"));
+    const w = el("span");
+    w.appendChild(el("span","t", title));
+    if(sub) w.appendChild(el("span","s", sub));
+    b.appendChild(w);
+    if(disabled) b.disabled = true;
+    return b;
+  }
+
+  choices.appendChild(choice("all","Everything",
+    ALL_SLIDES.length + " topics · " + QUESTIONS.length + " questions"));
+  choices.appendChild(choice("unit","One unit",
+    "A group of related topics, like injections or medication errors"));
+  choices.appendChild(choice("slide","One topic",
+    "A single slide you want to hammer"));
+  choices.appendChild(choice("missed","Only what I've gotten wrong",
+    missed.size ? plural(missed.size,"question") + " to clean up"
+                : "Nothing yet — this fills up as you answer questions",
+    missed.size === 0));
+  f1.appendChild(choices);
+
+  /* dropdown that appears under the unit / topic choices */
+  const picker = el("div","picker");
+  const sel = el("select");
+  sel.id = "scopePicker";
+  picker.appendChild(sel);
+  f1.appendChild(picker);
+  panel.appendChild(f1);
+
+  /* --- 2. how long --- */
+  const f2 = el("div","field");
+  f2.appendChild(el("div","h","2. How many questions?"));
+  const sizes = el("div","sizes");
+  [[10,"Quick check"],[25,"Standard"],[50,"Long"],["all","Everything"]].forEach(([v,lab]) => {
+    const b = el("button","size");
+    b.type = "button";
+    b.dataset.limit = v;
+    b.setAttribute("aria-pressed", String(setup.limit === v));
+    b.appendChild(el("span","t", v === "all" ? "All" : String(v)));
+    b.appendChild(el("span","s", lab));
+    sizes.appendChild(b);
+  });
+  f2.appendChild(sizes);
+  panel.appendChild(f2);
+
+  /* --- start --- */
+  const bar = el("div","startbar");
+  const start = el("button","btn","Start exam");
+  bar.appendChild(start);
+  const info = el("div","poolinfo");
+  bar.appendChild(info);
+  const warnBox = el("div","warn hidden");
+  bar.appendChild(warnBox);
+  panel.appendChild(bar);
+
+  /* --- collapsed extras --- */
+  const more = el("details","more");
+  const sum = document.createElement("summary");
+  sum.textContent = "More options";
+  more.appendChild(sum);
+  const fT = el("div","field");
+  fT.appendChild(el("div","d","Question formats to include:"));
+  [["mc","Multiple choice"],["sata","Select all that apply"],["match","Matching"]].forEach(([v,t]) => {
+    const l = el("label","cb");
+    const cb = el("input"); cb.type = "checkbox"; cb.dataset.type = v;
+    cb.checked = setup.types.has(v);
+    l.appendChild(cb); l.appendChild(el("span", null, t));
+    fT.appendChild(l);
+  });
+  const lf = el("label","cb");
+  const cbF = el("input"); cbF.type = "checkbox"; cbF.checked = !setup.fresh;
+  cbF.id = "repeatCb";
+  lf.appendChild(cbF);
+  lf.appendChild(el("span", null, "Let questions I've already seen come up again"));
+  fT.appendChild(lf);
+  more.appendChild(fT);
+  panel.appendChild(more);
+
+  app.appendChild(panel);
+
+  /* ----- wiring ----- */
+  function fillPicker(){
+    sel.textContent = "";
+    if(setup.scope === "unit"){
+      GROUPS.forEach((g, i) => {
+        const n = QUESTIONS.filter(q => g.slides.includes(q.s)).length;
+        const o = el("option", null, g.name + " (" + n + ")");
+        o.value = String(i);
+        sel.appendChild(o);
+      });
+      sel.value = String(setup.unit);
+    } else if(setup.scope === "slide"){
+      ALL_SLIDES.forEach(s => {
+        const n = QUESTIONS.filter(q => q.s === s).length;
+        const o = el("option", null, (TITLES[s] || ("Slide " + s)) + "  (" + n + " questions)");
+        o.value = String(s);
+        sel.appendChild(o);
+      });
+      if(setup.slide === null) setup.slide = ALL_SLIDES[0];
+      sel.value = String(setup.slide);
+    }
+    picker.classList.toggle("hidden", setup.scope !== "unit" && setup.scope !== "slide");
+  }
+
+  function refresh(){
+    const pool = poolFor(setup);
+    const unseen = pool.filter(q => !seen.has(q.id)).length;
+    const want = setup.limit === "all" ? pool.length : Math.min(setup.limit, pool.length);
+    info.innerHTML = "This exam will be <b>" + want + "</b> question" + (want === 1 ? "" : "s") +
+      ", drawn from " + pool.length + " available.";
+    start.disabled = pool.length === 0;
+    let msg = "";
+    if(pool.length === 0){
+      msg = "Nothing matches these settings. Check the question formats under More options.";
+    } else if(setup.fresh && unseen < want){
+      const rep = want - unseen;
+      msg = "You've already worked through most of this set, so " + rep + " question" +
+        (rep === 1 ? "" : "s") + " will come up again. Pick a wider set, or clear your history at the bottom of the page to start fresh.";
+    }
+    warnBox.textContent = msg;
+    warnBox.classList.toggle("hidden", !msg);
+  }
+
+  choices.addEventListener("click", e => {
+    const b = e.target.closest("[data-scope]");
+    if(!b || b.disabled) return;
+    setup.scope = b.dataset.scope;
+    choices.querySelectorAll("[data-scope]").forEach(c =>
+      c.setAttribute("aria-pressed", String(c === b)));
+    fillPicker(); refresh();
+  });
+  sel.addEventListener("change", () => {
+    if(setup.scope === "unit") setup.unit = Number(sel.value);
+    else if(setup.scope === "slide") setup.slide = Number(sel.value);
+    refresh();
+  });
+  sizes.addEventListener("click", e => {
+    const b = e.target.closest("[data-limit]");
+    if(!b) return;
+    setup.limit = b.dataset.limit === "all" ? "all" : Number(b.dataset.limit);
+    sizes.querySelectorAll("[data-limit]").forEach(c =>
+      c.setAttribute("aria-pressed", String(c === b)));
+    refresh();
+  });
+  more.addEventListener("change", e => {
+    const cb = e.target.closest("input");
+    if(!cb) return;
+    if(cb.dataset.type){
+      if(cb.checked) setup.types.add(cb.dataset.type); else setup.types.delete(cb.dataset.type);
+    } else {
+      setup.fresh = !cb.checked;
+    }
+    refresh();
+  });
+  start.addEventListener("click", () => startExam());
+
+  fillPicker();
+  refresh();
+}
+
+/* ---------------- EXAM RUNNER ---------------- */
+let exam = null;
+
+function startExam(){
+  const pool = poolFor(setup);
+  if(!pool.length) return;
+  const want = setup.limit === "all" ? pool.length : Math.min(setup.limit, pool.length);
+
+  let chosen;
+  if(setup.fresh){
+    const unseen = shuffle(pool.filter(q => !seen.has(q.id)));
+    const rest = shuffle(pool.filter(q => seen.has(q.id)));
+    chosen = unseen.concat(rest).slice(0, want);
+    chosen = shuffle(chosen);
+  } else {
+    chosen = shuffle(pool).slice(0, want);
+  }
+
+  exam = {
+    items: chosen.map(q => ({ id: q.id, state: {}, flagged: false })),
+    i: 0,
+    started: Date.now(),
+    submitted: false
+  };
+  viewExam();
+}
+
+function examAnsweredCount(){
+  return exam.items.filter(it => {
+    const q = byId(it.id);
+    if(q.t === "match") return Object.values(it.state.match || {}).some(v => v);
+    return (it.state.picked || []).length > 0;
+  }).length;
+}
+
+function viewExam(){
+  const app = document.getElementById("app");
+  app.textContent = "";
+
+  const top = el("div","examtop");
+  const pos = el("div","pos"); pos.id = "examPos";
+  const prog = el("div","prog"); const fill = el("i"); prog.appendChild(fill);
+  const timer = el("div","timer"); timer.id = "examTimer";
+  const quit = el("button","btn ghost small","End exam");
+  top.appendChild(pos); top.appendChild(prog); top.appendChild(timer); top.appendChild(quit);
+  app.appendChild(top);
+
+  const holder = el("div"); holder.id = "examHolder";
+  app.appendChild(holder);
+
+  const grid = el("div","navgrid"); grid.id = "examGrid";
+  app.appendChild(grid);
+
+  quit.addEventListener("click", () => submitExam());
+
+  const tick = setInterval(() => {
+    const t = document.getElementById("examTimer");
+    if(!t || !exam || exam.submitted){ clearInterval(tick); return; }
+    t.textContent = mmss(Date.now() - exam.started);
+  }, 1000);
+
+  drawExamGrid();
+  drawExamQuestion();
+
+  function drawExamGrid(){
+    grid.textContent = "";
+    exam.items.forEach((it, idx) => {
+      const b = el("button","navbtn", String(idx+1));
+      const q = byId(it.id);
+      const done = q.t === "match"
+        ? Object.values(it.state.match || {}).some(v => v)
+        : (it.state.picked || []).length > 0;
+      if(done) b.classList.add("done");
+      if(it.flagged) b.classList.add("flag");
+      if(idx === exam.i) b.classList.add("here");
+      b.addEventListener("click", () => { exam.i = idx; drawExamQuestion(); drawExamGrid(); });
+      grid.appendChild(b);
+    });
+  }
+
+  function drawExamQuestion(){
+    const it = exam.items[exam.i];
+    const q = byId(it.id);
+    holder.textContent = "";
+    holder.appendChild(renderQuestion(q, {
+      mode: "exam",
+      label: String(exam.i + 1),
+      showSlide: false,
+      state: it.state,
+      onChange: () => { drawExamGrid(); updateHead(); }
+    }));
+
+    const nav = el("div","runnav");
+    const prev = el("button","btn ghost","Previous");
+    prev.disabled = exam.i === 0;
+    prev.addEventListener("click", () => { exam.i--; drawExamQuestion(); drawExamGrid(); });
+    const flagBtn = el("button","btn ghost", it.flagged ? "Unflag" : "Flag for review");
+    flagBtn.addEventListener("click", () => {
+      it.flagged = !it.flagged; drawExamQuestion(); drawExamGrid();
+    });
+    nav.appendChild(prev); nav.appendChild(flagBtn);
+    const sp = el("span","sp");
+    nav.appendChild(sp);
+    if(exam.i < exam.items.length - 1){
+      const next = el("button","btn","Next");
+      next.addEventListener("click", () => { exam.i++; drawExamQuestion(); drawExamGrid(); });
+      nav.appendChild(next);
+    } else {
+      const sub = el("button","btn","Submit exam");
+      sub.addEventListener("click", () => submitExam());
+      nav.appendChild(sub);
+    }
+    holder.appendChild(nav);
+    updateHead();
+  }
+
+  function updateHead(){
+    const done = examAnsweredCount();
+    document.getElementById("examPos").textContent =
+      "Question " + (exam.i + 1) + " of " + exam.items.length;
+    fill.style.width = (100 * done / exam.items.length) + "%";
+  }
+}
+
+function submitExam(){
+  const unanswered = exam.items.length - examAnsweredCount();
+  if(unanswered > 0 && !exam.submitted){
+    if(!confirm(unanswered + " question" + (unanswered===1?" is":"s are") +
+        " still unanswered. Submit anyway?")) return;
+  }
+  exam.submitted = true;
+  exam.elapsed = Date.now() - exam.started;
+
+  exam.items.forEach(it => {
+    const q = byId(it.id);
+    it.correct = isCorrect(q, it.state);
+    seen.add(q.id);
+    if(it.correct) missed.delete(q.id); else missed.add(q.id);
+  });
+  const right = exam.items.filter(it => it.correct).length;
+  runs.push({ when: Date.now(), n: exam.items.length, right, ms: exam.elapsed });
+  persist();
+  viewResults();
+}
+
+/* ---------------- RESULTS ---------------- */
+function viewResults(){
+  const app = document.getElementById("app");
+  app.textContent = "";
+  const right = exam.items.filter(it => it.correct).length;
+  const n = exam.items.length;
+  const pct = Math.round(100 * right / n);
+
+  const panel = el("div","panel");
+  panel.appendChild(el("div","scorebig", pct + "%"));
+  panel.appendChild(el("div","scoresub",
+    right + " of " + n + " correct · " + mmss(exam.elapsed) + " elapsed"));
+
+  /* breakdown by slide */
+  const bySlide = new Map();
+  exam.items.forEach(it => {
+    const q = byId(it.id);
+    if(!bySlide.has(q.s)) bySlide.set(q.s, {n:0, r:0});
+    const b = bySlide.get(q.s); b.n++; if(it.correct) b.r++;
+  });
+  const weak = [...bySlide.entries()].filter(([,b]) => b.r < b.n).sort((a,b) =>
+    (a[1].r/a[1].n) - (b[1].r/b[1].n));
+
+  if(weak.length){
+    panel.appendChild(el("div","h","Where to focus next"));
+    const scroll = el("div","scroll");
+    const tb = el("table","bd");
+    const hr = el("tr");
+    ["Slide","Score"].forEach((h,i) => {
+      const th = el("th", i ? "num" : null, h); hr.appendChild(th);
+    });
+    const thead = document.createElement("thead"); thead.appendChild(hr); tb.appendChild(thead);
+    const tbody = document.createElement("tbody");
+    weak.forEach(([s,b]) => {
+      const tr = el("tr");
+      tr.appendChild(el("td", null, s + " — " + (TITLES[s] || "")));
+      tr.appendChild(el("td","num", b.r + "/" + b.n));
+      tbody.appendChild(tr);
+    });
+    tb.appendChild(tbody);
+    scroll.appendChild(tb);
+    panel.appendChild(scroll);
+  } else {
+    panel.appendChild(el("p","sub","Clean sweep — nothing missed on this one."));
+  }
+
+  const bar = el("div","poolbar");
+  const again = el("button","btn","Build another exam");
+  again.addEventListener("click", () => setMode("exam"));
+  bar.appendChild(again);
+  const retry = el("button","btn ghost","Retake the ones I missed");
+  retry.disabled = right === n;
+  retry.addEventListener("click", () => {
+    const ids = exam.items.filter(it => !it.correct).map(it => it.id);
+    exam = { items: shuffle(ids).map(id => ({id, state:{}, flagged:false})),
+             i:0, started:Date.now(), submitted:false };
+    viewExam();
+    window.scrollTo({top:0});
+  });
+  bar.appendChild(retry);
+  panel.appendChild(bar);
+  app.appendChild(panel);
+
+  /* full review */
+  app.appendChild(el("h2", null, "Review every question"));
+  const note = el("p","sub","Your answer is marked; the correct answer is outlined in green.");
+  note.style.marginBottom = "1.1rem";
+  app.appendChild(note);
+  exam.items.forEach((it, idx) => {
+    const q = byId(it.id);
+    app.appendChild(renderQuestion(q, {
+      mode: "review", label: String(idx+1), showSlide: true, state: it.state
+    }));
+  });
+}
+
+/* ---------------- mode switching ---------------- */
+function setMode(m){
+  document.querySelectorAll(".mode").forEach(b =>
+    b.setAttribute("aria-selected", String(b.dataset.mode === m)));
+  if(m === "exam") viewExamSetup(); else viewStudy();
+  window.scrollTo({top:0});
+}
+document.querySelectorAll(".mode").forEach(b =>
+  b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+document.getElementById("wipe").addEventListener("click", () => {
+  if(!confirm("Clear your attempted-question history and exam scores on this device?")) return;
+  seen = new Set(); missed = new Set(); runs = [];
+  persist();
+  setMode(document.querySelector('.mode[aria-selected="true"]').dataset.mode);
+});
+
+document.getElementById("total").textContent = QUESTIONS.length;
+setMode("study");
+</script>
+</body>
+</html>
